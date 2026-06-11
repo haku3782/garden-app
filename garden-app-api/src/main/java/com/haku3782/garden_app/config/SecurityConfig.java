@@ -12,6 +12,10 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import java.util.List;
 
 /**
  * Spring Security の設定を定義するクラス。
@@ -53,6 +57,8 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+            // CORS 設定を適用
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             // CSRF 無効化（REST API のため不要）
             .csrf(AbstractHttpConfigurer::disable)
             // セッションを使わない（JWT 認証のため STATELESS に設定）
@@ -75,6 +81,26 @@ public class SecurityConfig {
             .addFilterBefore(jwtFilter,
                 UsernamePasswordAuthenticationFilter.class);
         return http.build();
+    }
+
+    /**
+     * CORS の許可設定を定義する Bean。
+     *
+     * <p>Vue 開発サーバー（localhost:5173 / 5174）からのリクエストを許可する。
+     * Authorization ヘッダーを含むリクエストも通すため allowedHeaders に "*" を指定する。
+     *
+     * @return CORS 設定ソース
+     */
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:5174"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(List.of("*"));
+        config.setAllowCredentials(true);
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return source;
     }
 
     /**
