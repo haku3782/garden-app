@@ -2,7 +2,6 @@ package com.haku3782.garden_app.dto;
 
 import com.haku3782.garden_app.domain.PlantType;
 import lombok.Data;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -31,8 +30,8 @@ public class PlantResponse {
     /** 植物の種別（vegetable / fruit / herb / flower / tree / other） */
     private PlantType type;
 
-    /** 植えた日付 */
-    private LocalDate plantedAt;
+    /** 植えた日時 */
+    private LocalDateTime plantedAt;
 
     /** メモ */
     private String memo;

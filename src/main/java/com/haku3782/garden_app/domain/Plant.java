@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -66,10 +65,10 @@ public class Plant {
     private PlantType type;
 
     /**
-     * 植えた日付。任意項目。
+     * 植えた日時。任意項目。日付だけでなく時刻も記録できる。
      */
     @Column(name = "planted_at")
-    private LocalDate plantedAt;
+    private LocalDateTime plantedAt;
 
     /**
      * メモ。任意項目。自由記述欄。

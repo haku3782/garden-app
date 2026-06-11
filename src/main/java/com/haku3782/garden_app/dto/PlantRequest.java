@@ -2,7 +2,7 @@ package com.haku3782.garden_app.dto;
 
 import com.haku3782.garden_app.domain.PlantType;
 import lombok.Data;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 /**
  * 植物の登録・更新 API へのリクエスト body をマッピングするクラス。
@@ -20,8 +20,8 @@ public class PlantRequest {
     /** 植物の種別（vegetable / fruit / herb / flower / tree / other） */
     private PlantType type;
 
-    /** 植えた日付（任意） */
-    private LocalDate plantedAt;
+    /** 植えた日時（任意）。例: "2026-06-11T09:00:00" */
+    private LocalDateTime plantedAt;
 
     /** メモ（任意・自由記述） */
     private String memo;

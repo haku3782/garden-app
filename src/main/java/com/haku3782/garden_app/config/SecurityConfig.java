@@ -60,8 +60,15 @@ public class SecurityConfig {
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             // 認可ルールの設定
             .authorizeHttpRequests(auth -> auth
-                // /api/auth/** （登録・ログイン）は認証なしでアクセス可
-                .requestMatchers("/api/auth/**").permitAll()
+                // 認証なしでアクセス可能なパス
+                // /api/auth/** : 登録・ログイン
+                // /swagger-ui/**, /swagger-ui.html, /v3/api-docs/** : Swagger UI と API ドキュメント
+                .requestMatchers(
+                    "/api/auth/**",
+                    "/swagger-ui/**",
+                    "/swagger-ui.html",
+                    "/v3/api-docs/**"
+                ).permitAll()
                 // それ以外のエンドポイントは認証必須
                 .anyRequest().authenticated())
             // JwtFilter を Spring Security のフィルターチェーンに追加
