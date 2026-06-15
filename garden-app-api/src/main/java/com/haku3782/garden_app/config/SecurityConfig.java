@@ -71,6 +71,7 @@ public class SecurityConfig {
                 // /swagger-ui/**, /swagger-ui.html, /v3/api-docs/** : Swagger UI と API ドキュメント
                 .requestMatchers(
                     "/api/auth/**",
+                    "/health",
                     "/swagger-ui/**",
                     "/swagger-ui.html",
                     "/v3/api-docs/**"
