@@ -9,15 +9,21 @@
       <p v-if="plant.memo">メモ：{{ plant.memo }}</p>
     </div>
 
+    <!-- ストリーク -->
+    <StreakCounter :care-logs="careLogs" />
+
+    <!-- ヒートマップ -->
+    <CareHeatmap :care-logs="careLogs" />
+
     <div class="care-section">
       <h2>ケア記録</h2>
 
       <div class="add-care-form">
         <select v-model="newCareLog.careType">
           <option value="">種類を選択</option>
-          <option value="water">水やり</option>
-          <option value="fertilize">肥料</option>
-          <option value="harvest">収穫</option>
+          <option value="water">💧水やり</option>
+          <option value="fertilize">🌿肥料</option>
+          <option value="harvest">🌾収穫</option>
           <option value="other">その他</option>
         </select>
         <input v-model="newCareLog.caredAt" type="datetime-local" />
@@ -43,6 +49,8 @@ import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getPlants } from '@/api/plants'
 import { getCareLogs, createCareLog, deleteCareLog } from '@/api/careLogs'
+import CareHeatmap from '@/components/CareHeatmap.vue'
+import StreakCounter from '@/components/StreakCounter.vue'
 
 const route = useRoute()
 const router = useRouter()
