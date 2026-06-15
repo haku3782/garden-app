@@ -18,6 +18,7 @@
 | Pinia | 状態管理 |
 | Vue Router | ルーティング |
 | Axios | HTTP通信 |
+| Vercel | ホスティング |
 
 ### バックエンド
 | 技術 | 用途 |
@@ -53,16 +54,40 @@ plants     id, user_id, name, type, planted_at, memo, created_at
 care_logs  id, plant_id, care_type, cared_at, memo, created_at
 ```
 
+## 📁 ディレクトリ構成
+
+```
+garden-app-web/src/
+├── api/                   # API呼び出し関数
+│   ├── axios.js           # axiosベース設定
+│   ├── auth.js            # 認証API
+│   ├── plants.js          # 植物API
+│   └── careLogs.js        # ケア記録API
+├── components/            # 共通コンポーネント
+│   ├── CareHeatmap.vue    # ヒートマップ
+│   └── StreakCounter.vue  # ストリーク表示
+├── stores/                # Pinia状態管理
+│   └── auth.js            # 認証ストア
+├── views/                 # ページコンポーネント
+│   ├── LoginView.vue
+│   ├── RegisterView.vue
+│   ├── PlantListView.vue
+│   └── PlantDetailView.vue
+└── router/                # ルーティング
+    └── index.js
+```
+
 ## 🚀 ローカル起動手順
 
 ### バックエンド
 
 ```bash
-# 環境変数を設定
-cp .env.example .env
-# .envを編集してDBの接続情報を入力
+cd garden-app-api
 
-# 起動
+# application.local.yaml を作成して接続情報を設定
+# spring.datasource.url / username / password
+# jwt.secret
+
 ./mvnw spring-boot:run
 ```
 
@@ -70,7 +95,15 @@ cp .env.example .env
 
 ```bash
 cd garden-app-web
+
+# 依存関係インストール
 npm install
+
+# 環境変数を設定
+cp .env.example .env.local
+# VITE_API_URL=http://localhost:8081
+
+# 開発サーバー起動
 npm run dev
 ```
 
@@ -79,7 +112,7 @@ npm run dev
 ```
 ユーザー
   ↓
-Vercel（Vue.js）
+Vercel（Vue.js / SPA）
   ↓ REST API / JWT
 Render（Spring Boot）
   ↓
@@ -91,5 +124,8 @@ Supabase（PostgreSQL）
 - **Vue.js**：ReactはダーツシミュレータでReact済みのため、フレームワークの使い分けをアピール
 - **Spring Boot**：Javaでの本格的なバックエンド設計力をアピール
 - **JWT**：フロントとバックが別ドメインのSPA構成に最適
+- **Pinia**：Vue公式の状態管理ライブラリ、シンプルで学習コストが低い
+- **Axios**：JWTトークンをインターセプターで自動付与できるため採用
 - **Supabase**：PostgreSQLの永続化を無料枠で実現
 - **GitHub Actions**：CI/CDとスリープ防止pingを自動化
+- **Vercel**：Vue.jsのデプロイに最適、GitHubと連携して自動デプロイ
