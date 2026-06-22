@@ -7,6 +7,7 @@ import com.haku3782.garden_app.dto.PlantResponse;
 import com.haku3782.garden_app.repository.PlantRepository;
 import com.haku3782.garden_app.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -112,14 +113,18 @@ public class PlantService {
     /**
      * 指定した ID の植物を更新する。
      *
+     * <p>ログイン中のユーザーが所有する植物でない場合はアクセスを拒否する。
+     *
      * @param id      更新対象の植物 ID
      * @param request 更新後の情報（名前・種別・植えた日・メモ）
      * @return 更新後の植物の PlantResponse
-     * @throws RuntimeException 指定 ID の植物が存在しない場合
+     * @throws RuntimeException      指定 ID の植物が存在しない場合
+     * @throws AccessDeniedException ログイン中のユーザーが所有者でない場合
      */
     public PlantResponse update(UUID id, PlantRequest request) {
         Plant plant = plantRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("植物が見つかりません"));
+        requireOwner(plant);
         plant.setName(request.getName());
         plant.setType(request.getType());
         plant.setPlantedAt(request.getPlantedAt());
@@ -130,9 +135,28 @@ public class PlantService {
     /**
      * 指定した ID の植物を削除する。
      *
+     * <p>ログイン中のユーザーが所有する植物でない場合はアクセスを拒否する。
+     *
      * @param id 削除対象の植物 ID
+     * @throws RuntimeException      指定 ID の植物が存在しない場合
+     * @throws AccessDeniedException ログイン中のユーザーが所有者でない場合
      */
     public void delete(UUID id) {
+        Plant plant = plantRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("植物が見つかりません"));
+        requireOwner(plant);
         plantRepository.deleteById(id);
+    }
+
+    /**
+     * 指定した植物がログイン中のユーザーの所有物であることを確認する。
+     *
+     * @param plant 確認対象の植物
+     * @throws AccessDeniedException ログイン中のユーザーが所有者でない場合
+     */
+    private void requireOwner(Plant plant) {
+        if (!plant.getUser().getUsername().equals(getCurrentUsername())) {
+            throw new AccessDeniedException("この植物を操作する権限がありません");
+        }
     }
 }

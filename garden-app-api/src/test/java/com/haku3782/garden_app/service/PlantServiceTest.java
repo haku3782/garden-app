@@ -14,6 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
@@ -52,6 +53,14 @@ class PlantServiceTest {
     @AfterEach
     void clearSecurityContext() {
         SecurityContextHolder.clearContext();
+    }
+
+    private Plant plantOwnedBy(String username) {
+        User owner = new User();
+        owner.setUsername(username);
+        Plant plant = new Plant();
+        plant.setUser(owner);
+        return plant;
     }
 
     @Test
@@ -101,7 +110,7 @@ class PlantServiceTest {
     @Test
     void update_appliesNewValuesToExistingPlant() {
         UUID id = UUID.randomUUID();
-        Plant existing = new Plant();
+        Plant existing = plantOwnedBy("taro");
         existing.setId(id);
         existing.setName("旧名前");
         existing.setType(PlantType.herb);
@@ -120,8 +129,48 @@ class PlantServiceTest {
     }
 
     @Test
-    void delete_delegatesToRepository() {
+    void update_throwsAccessDeniedWhenNotOwner() {
         UUID id = UUID.randomUUID();
+        Plant ownedByOther = plantOwnedBy("hanako");
+        ownedByOther.setId(id);
+
+        when(plantRepository.findById(id)).thenReturn(Optional.of(ownedByOther));
+
+        assertThatThrownBy(() -> plantService.update(id, new PlantRequest()))
+                .isInstanceOf(AccessDeniedException.class);
+    }
+
+    @Test
+    void delete_throwsWhenPlantNotFound() {
+        UUID missingId = UUID.randomUUID();
+        when(plantRepository.findById(missingId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> plantService.delete(missingId))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("見つかりません");
+    }
+
+    @Test
+    void delete_throwsAccessDeniedWhenNotOwner() {
+        UUID id = UUID.randomUUID();
+        Plant ownedByOther = plantOwnedBy("hanako");
+        ownedByOther.setId(id);
+
+        when(plantRepository.findById(id)).thenReturn(Optional.of(ownedByOther));
+
+        assertThatThrownBy(() -> plantService.delete(id))
+                .isInstanceOf(AccessDeniedException.class);
+
+        org.mockito.Mockito.verify(plantRepository, org.mockito.Mockito.never()).deleteById(id);
+    }
+
+    @Test
+    void delete_delegatesToRepositoryWhenOwner() {
+        UUID id = UUID.randomUUID();
+        Plant owned = plantOwnedBy("taro");
+        owned.setId(id);
+
+        when(plantRepository.findById(id)).thenReturn(Optional.of(owned));
 
         plantService.delete(id);
 

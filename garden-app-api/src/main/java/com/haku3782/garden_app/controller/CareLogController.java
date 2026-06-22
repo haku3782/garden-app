@@ -66,16 +66,16 @@ public class CareLogController {
      * 指定した ID のケアログを削除する。
      *
      * <p>エンドポイント： DELETE /api/plants/{plantId}/care-logs/{id}
-     * plantId はパス上に必要だが、削除処理では id のみを使用する。
+     * plantId はケアログの紐付け先と一致するかの検証にも使用する。
      *
-     * @param plantId パスパラメータの植物 ID（パス構造のために必要）
+     * @param plantId パスパラメータの植物 ID（紐付け先の検証用）
      * @param id      削除対象のケアログ ID
      * @return HTTP 204 No Content（ボディなし）
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID plantId,
                                         @PathVariable UUID id) {
-        careLogService.delete(id);
+        careLogService.delete(plantId, id);
         return ResponseEntity.noContent().build();
     }
 }

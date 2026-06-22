@@ -2,16 +2,24 @@ package com.haku3782.garden_app.service;
 
 import com.haku3782.garden_app.domain.CareLog;
 import com.haku3782.garden_app.domain.Plant;
+import com.haku3782.garden_app.domain.User;
 import com.haku3782.garden_app.dto.CareLogRequest;
 import com.haku3782.garden_app.dto.CareLogResponse;
 import com.haku3782.garden_app.repository.CareLogRepository;
 import com.haku3782.garden_app.repository.PlantRepository;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -35,11 +43,32 @@ class CareLogServiceTest {
     @InjectMocks
     private CareLogService careLogService;
 
+    @BeforeEach
+    void setUpSecurityContext() {
+        Authentication auth = new UsernamePasswordAuthenticationToken("taro", null);
+        SecurityContext context = SecurityContextHolder.createEmptyContext();
+        context.setAuthentication(auth);
+        SecurityContextHolder.setContext(context);
+    }
+
+    @AfterEach
+    void clearSecurityContext() {
+        SecurityContextHolder.clearContext();
+    }
+
+    private Plant plantOwnedBy(String username, UUID plantId) {
+        User owner = new User();
+        owner.setUsername(username);
+        Plant plant = new Plant();
+        plant.setId(plantId);
+        plant.setUser(owner);
+        return plant;
+    }
+
     @Test
     void getByPlantId_returnsLogsOrderedByCaredAtDesc() {
         UUID plantId = UUID.randomUUID();
-        Plant plant = new Plant();
-        plant.setId(plantId);
+        Plant plant = plantOwnedBy("taro", plantId);
 
         CareLog log = new CareLog();
         log.setId(UUID.randomUUID());
@@ -47,6 +76,7 @@ class CareLogServiceTest {
         log.setCareType("水やり");
         log.setCaredAt(LocalDateTime.of(2026, 6, 10, 8, 0));
 
+        when(plantRepository.findById(plantId)).thenReturn(Optional.of(plant));
         when(careLogRepository.findByPlantIdOrderByCaredAtDesc(plantId)).thenReturn(List.of(log));
 
         List<CareLogResponse> result = careLogService.getByPlantId(plantId);
@@ -54,6 +84,17 @@ class CareLogServiceTest {
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getCareType()).isEqualTo("水やり");
         assertThat(result.get(0).getPlantId()).isEqualTo(plantId);
+    }
+
+    @Test
+    void getByPlantId_throwsAccessDeniedWhenNotOwner() {
+        UUID plantId = UUID.randomUUID();
+        Plant ownedByOther = plantOwnedBy("hanako", plantId);
+
+        when(plantRepository.findById(plantId)).thenReturn(Optional.of(ownedByOther));
+
+        assertThatThrownBy(() -> careLogService.getByPlantId(plantId))
+                .isInstanceOf(AccessDeniedException.class);
     }
 
     @Test
@@ -67,10 +108,20 @@ class CareLogServiceTest {
     }
 
     @Test
+    void create_throwsAccessDeniedWhenNotOwner() {
+        UUID plantId = UUID.randomUUID();
+        Plant ownedByOther = plantOwnedBy("hanako", plantId);
+
+        when(plantRepository.findById(plantId)).thenReturn(Optional.of(ownedByOther));
+
+        assertThatThrownBy(() -> careLogService.create(plantId, new CareLogRequest()))
+                .isInstanceOf(AccessDeniedException.class);
+    }
+
+    @Test
     void create_savesCareLogLinkedToPlant() {
         UUID plantId = UUID.randomUUID();
-        Plant plant = new Plant();
-        plant.setId(plantId);
+        Plant plant = plantOwnedBy("taro", plantId);
 
         when(plantRepository.findById(plantId)).thenReturn(Optional.of(plant));
         when(careLogRepository.save(any(CareLog.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -88,10 +139,65 @@ class CareLogServiceTest {
     }
 
     @Test
-    void delete_delegatesToRepository() {
+    void delete_throwsWhenCareLogNotFound() {
+        UUID plantId = UUID.randomUUID();
+        UUID id = UUID.randomUUID();
+        when(careLogRepository.findById(id)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> careLogService.delete(plantId, id))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("見つかりません");
+    }
+
+    @Test
+    void delete_throwsWhenPlantIdDoesNotMatch() {
+        UUID plantId = UUID.randomUUID();
+        UUID otherPlantId = UUID.randomUUID();
         UUID id = UUID.randomUUID();
 
-        careLogService.delete(id);
+        Plant plant = plantOwnedBy("taro", otherPlantId);
+        CareLog careLog = new CareLog();
+        careLog.setId(id);
+        careLog.setPlant(plant);
+
+        when(careLogRepository.findById(id)).thenReturn(Optional.of(careLog));
+
+        assertThatThrownBy(() -> careLogService.delete(plantId, id))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("紐づくケアログ");
+    }
+
+    @Test
+    void delete_throwsAccessDeniedWhenNotOwner() {
+        UUID plantId = UUID.randomUUID();
+        UUID id = UUID.randomUUID();
+
+        Plant ownedByOther = plantOwnedBy("hanako", plantId);
+        CareLog careLog = new CareLog();
+        careLog.setId(id);
+        careLog.setPlant(ownedByOther);
+
+        when(careLogRepository.findById(id)).thenReturn(Optional.of(careLog));
+
+        assertThatThrownBy(() -> careLogService.delete(plantId, id))
+                .isInstanceOf(AccessDeniedException.class);
+
+        Mockito.verify(careLogRepository, Mockito.never()).deleteById(id);
+    }
+
+    @Test
+    void delete_delegatesToRepositoryWhenOwner() {
+        UUID plantId = UUID.randomUUID();
+        UUID id = UUID.randomUUID();
+
+        Plant plant = plantOwnedBy("taro", plantId);
+        CareLog careLog = new CareLog();
+        careLog.setId(id);
+        careLog.setPlant(plant);
+
+        when(careLogRepository.findById(id)).thenReturn(Optional.of(careLog));
+
+        careLogService.delete(plantId, id);
 
         Mockito.verify(careLogRepository).deleteById(id);
     }

@@ -7,6 +7,8 @@ import com.haku3782.garden_app.dto.CareLogResponse;
 import com.haku3782.garden_app.repository.CareLogRepository;
 import com.haku3782.garden_app.repository.PlantRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -36,6 +38,28 @@ public class CareLogService {
     private final PlantRepository plantRepository;
 
     /**
+     * SecurityContext からログイン中のユーザー名を取得する。
+     *
+     * @return ログイン中のユーザー名
+     */
+    private String getCurrentUsername() {
+        return SecurityContextHolder.getContext()
+                .getAuthentication().getName();
+    }
+
+    /**
+     * 指定した植物がログイン中のユーザーの所有物であることを確認する。
+     *
+     * @param plant 確認対象の植物
+     * @throws AccessDeniedException ログイン中のユーザーが所有者でない場合
+     */
+    private void requireOwner(Plant plant) {
+        if (!plant.getUser().getUsername().equals(getCurrentUsername())) {
+            throw new AccessDeniedException("この植物のケアログを操作する権限がありません");
+        }
+    }
+
+    /**
      * CareLog エンティティを CareLogResponse DTO に変換する。
      *
      * <p>エンティティをそのまま返すと Plant（パスワード等を含む User）が露出するため、
@@ -60,11 +84,17 @@ public class CareLogService {
      * 指定した植物 ID に紐づくケアログをケア日付の降順で取得する。
      *
      * <p>最新のケアが先頭に来るよう降順（DESC）で返す。
+     * ログイン中のユーザーが所有する植物でない場合はアクセスを拒否する。
      *
      * @param plantId 対象の植物 ID
      * @return ケアログのリスト（新しい順）
+     * @throws RuntimeException      指定 ID の植物が存在しない場合
+     * @throws AccessDeniedException ログイン中のユーザーが所有者でない場合
      */
     public List<CareLogResponse> getByPlantId(UUID plantId) {
+        Plant plant = plantRepository.findById(plantId)
+                .orElseThrow(() -> new RuntimeException("植物が見つかりません"));
+        requireOwner(plant);
         return careLogRepository.findByPlantIdOrderByCaredAtDesc(plantId)
                 .stream().map(this::toResponse)
                 .collect(Collectors.toList());
@@ -76,6 +106,7 @@ public class CareLogService {
      * <p>処理の流れ：
      * <ol>
      *   <li>植物 ID で DB を検索し、存在しない場合は例外をスロー</li>
+     *   <li>ログイン中のユーザーが所有する植物でない場合はアクセスを拒否</li>
      *   <li>CareLog エンティティを生成して plants と紐づけて保存</li>
      *   <li>保存結果を CareLogResponse に変換して返す</li>
      * </ol>
@@ -83,12 +114,14 @@ public class CareLogService {
      * @param plantId 対象の植物 ID
      * @param request ケアの種類・日付・メモを含むリクエスト
      * @return 登録したケアログの CareLogResponse
-     * @throws RuntimeException 指定 ID の植物が存在しない場合
+     * @throws RuntimeException      指定 ID の植物が存在しない場合
+     * @throws AccessDeniedException ログイン中のユーザーが所有者でない場合
      */
     public CareLogResponse create(UUID plantId, CareLogRequest request) {
         // 植物の存在確認（存在しない場合は例外）
         Plant plant = plantRepository.findById(plantId)
                 .orElseThrow(() -> new RuntimeException("植物が見つかりません"));
+        requireOwner(plant);
         CareLog careLog = new CareLog();
         careLog.setPlant(plant);
         careLog.setCareType(request.getCareType());
@@ -100,9 +133,21 @@ public class CareLogService {
     /**
      * 指定した ID のケアログを削除する。
      *
-     * @param id 削除対象のケアログ ID
+     * <p>URL 上の plantId と紐付け先の植物が一致しない場合、および
+     * ログイン中のユーザーが所有する植物でない場合はアクセスを拒否する。
+     *
+     * @param plantId URL パス上の植物 ID（ケアログの紐付け先と一致するか確認するために使用）
+     * @param id      削除対象のケアログ ID
+     * @throws RuntimeException      指定 ID のケアログが存在しない場合、または plantId と紐付け先が一致しない場合
+     * @throws AccessDeniedException ログイン中のユーザーが所有者でない場合
      */
-    public void delete(UUID id) {
+    public void delete(UUID plantId, UUID id) {
+        CareLog careLog = careLogRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("ケアログが見つかりません"));
+        if (!careLog.getPlant().getId().equals(plantId)) {
+            throw new RuntimeException("指定された植物に紐づくケアログではありません");
+        }
+        requireOwner(careLog.getPlant());
         careLogRepository.deleteById(id);
     }
 }
