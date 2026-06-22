@@ -29,7 +29,7 @@ async function handleLogin() {
     const res = await login(username.value, password.value)
     authStore.login(res.data.token, username.value)
     router.push('/plants')
-  } catch (e) {
+  } catch {
     error.value = 'ログインに失敗しました'
   }
 }

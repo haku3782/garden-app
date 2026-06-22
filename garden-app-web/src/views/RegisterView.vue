@@ -29,7 +29,7 @@ async function handleRegister() {
     const res = await register(username.value, password.value)
     authStore.login(res.data.token, username.value)
     router.push('/plants')
-  } catch (e) {
+  } catch {
     error.value = '登録に失敗しました'
   }
 }
