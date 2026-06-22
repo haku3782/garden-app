@@ -5,6 +5,7 @@ import com.haku3782.garden_app.domain.Plant;
 import com.haku3782.garden_app.domain.User;
 import com.haku3782.garden_app.dto.CareLogRequest;
 import com.haku3782.garden_app.dto.CareLogResponse;
+import com.haku3782.garden_app.dto.PhotoGalleryItemResponse;
 import com.haku3782.garden_app.repository.CareLogRepository;
 import com.haku3782.garden_app.repository.PlantRepository;
 import org.junit.jupiter.api.AfterEach;
@@ -15,6 +16,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -39,6 +41,9 @@ class CareLogServiceTest {
 
     @Mock
     private PlantRepository plantRepository;
+
+    @Mock
+    private SupabaseStorageService supabaseStorageService;
 
     @InjectMocks
     private CareLogService careLogService;
@@ -200,5 +205,106 @@ class CareLogServiceTest {
         careLogService.delete(plantId, id);
 
         Mockito.verify(careLogRepository).deleteById(id);
+    }
+
+    @Test
+    void uploadPhoto_savesPhotoUrlWhenValid() {
+        UUID plantId = UUID.randomUUID();
+        UUID id = UUID.randomUUID();
+
+        Plant plant = plantOwnedBy("taro", plantId);
+        CareLog careLog = new CareLog();
+        careLog.setId(id);
+        careLog.setPlant(plant);
+
+        MockMultipartFile photo = new MockMultipartFile("photo", "flower.jpg", "image/jpeg", new byte[]{1, 2, 3});
+
+        when(careLogRepository.findById(id)).thenReturn(Optional.of(careLog));
+        when(supabaseStorageService.upload(photo)).thenReturn("https://example.supabase.co/storage/v1/object/public/care-log-photos/abc.jpg");
+        when(careLogRepository.save(any(CareLog.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        CareLogResponse response = careLogService.uploadPhoto(plantId, id, photo);
+
+        assertThat(response.getPhotoUrl()).isEqualTo("https://example.supabase.co/storage/v1/object/public/care-log-photos/abc.jpg");
+    }
+
+    @Test
+    void uploadPhoto_throwsWhenFileTooLarge() {
+        UUID plantId = UUID.randomUUID();
+        UUID id = UUID.randomUUID();
+
+        Plant plant = plantOwnedBy("taro", plantId);
+        CareLog careLog = new CareLog();
+        careLog.setId(id);
+        careLog.setPlant(plant);
+
+        byte[] tooLarge = new byte[6 * 1024 * 1024];
+        MockMultipartFile photo = new MockMultipartFile("photo", "big.jpg", "image/jpeg", tooLarge);
+
+        when(careLogRepository.findById(id)).thenReturn(Optional.of(careLog));
+
+        assertThatThrownBy(() -> careLogService.uploadPhoto(plantId, id, photo))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("5MB");
+    }
+
+    @Test
+    void uploadPhoto_throwsWhenContentTypeNotAllowed() {
+        UUID plantId = UUID.randomUUID();
+        UUID id = UUID.randomUUID();
+
+        Plant plant = plantOwnedBy("taro", plantId);
+        CareLog careLog = new CareLog();
+        careLog.setId(id);
+        careLog.setPlant(plant);
+
+        MockMultipartFile file = new MockMultipartFile("photo", "doc.pdf", "application/pdf", new byte[]{1, 2, 3});
+
+        when(careLogRepository.findById(id)).thenReturn(Optional.of(careLog));
+
+        assertThatThrownBy(() -> careLogService.uploadPhoto(plantId, id, file))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("対応していない");
+    }
+
+    @Test
+    void uploadPhoto_throwsAccessDeniedWhenNotOwner() {
+        UUID plantId = UUID.randomUUID();
+        UUID id = UUID.randomUUID();
+
+        Plant ownedByOther = plantOwnedBy("hanako", plantId);
+        CareLog careLog = new CareLog();
+        careLog.setId(id);
+        careLog.setPlant(ownedByOther);
+
+        MockMultipartFile photo = new MockMultipartFile("photo", "flower.jpg", "image/jpeg", new byte[]{1, 2, 3});
+
+        when(careLogRepository.findById(id)).thenReturn(Optional.of(careLog));
+
+        assertThatThrownBy(() -> careLogService.uploadPhoto(plantId, id, photo))
+                .isInstanceOf(AccessDeniedException.class);
+    }
+
+    @Test
+    void getPhotoGallery_returnsPhotosAcrossPlants() {
+        UUID plantId = UUID.randomUUID();
+        Plant plant = plantOwnedBy("taro", plantId);
+        plant.setName("トマト");
+
+        CareLog log = new CareLog();
+        log.setId(UUID.randomUUID());
+        log.setPlant(plant);
+        log.setCareType("収穫");
+        log.setCaredAt(LocalDateTime.of(2026, 6, 12, 10, 0));
+        log.setPhotoUrl("https://example.supabase.co/storage/v1/object/public/care-log-photos/abc.jpg");
+
+        when(careLogRepository.findByPlant_User_UsernameAndPhotoUrlIsNotNullOrderByCaredAtDesc("taro"))
+                .thenReturn(List.of(log));
+
+        List<PhotoGalleryItemResponse> result = careLogService.getPhotoGallery();
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getPlantName()).isEqualTo("トマト");
+        assertThat(result.get(0).getPhotoUrl()).isEqualTo("https://example.supabase.co/storage/v1/object/public/care-log-photos/abc.jpg");
     }
 }

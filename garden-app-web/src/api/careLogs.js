@@ -8,3 +8,11 @@ export const createCareLog = (plantId, data) =>
 
 export const deleteCareLog = (plantId, id) =>
   api.delete(`/api/plants/${plantId}/care-logs/${id}`)
+
+export const uploadCareLogPhoto = (plantId, id, file) => {
+  const formData = new FormData()
+  formData.append('photo', file)
+  return api.post(`/api/plants/${plantId}/care-logs/${id}/photo`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  })
+}

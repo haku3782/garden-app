@@ -42,4 +42,18 @@ public interface CareLogRepository extends JpaRepository<CareLog, UUID> {
      * @return 該当するケアログのリスト（新しいケア日順）
      */
     List<CareLog> findByPlantIdOrderByCaredAtDesc(UUID plantId);
+
+    /**
+     * 指定したユーザーが所有する植物のうち、写真が登録されているケアログを
+     * ケア日付の降順で取得する（全植物横断の写真ギャラリー表示用）。
+     *
+     * <p>生成される SQL のイメージ：
+     * {@code SELECT cl.* FROM care_logs cl JOIN plants p ON cl.plant_id = p.id
+     *         JOIN users u ON p.user_id = u.id
+     *         WHERE u.username = ? AND cl.photo_url IS NOT NULL ORDER BY cl.cared_at DESC}
+     *
+     * @param username 対象ユーザーのユーザー名
+     * @return 写真付きケアログのリスト（新しいケア日順）
+     */
+    List<CareLog> findByPlant_User_UsernameAndPhotoUrlIsNotNullOrderByCaredAtDesc(String username);
 }

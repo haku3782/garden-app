@@ -33,6 +33,9 @@ public class CareLogResponse {
     /** メモ */
     private String memo;
 
+    /** ケア記録に添付された写真のURL（無ければ null） */
+    private String photoUrl;
+
     /** レコードの作成日時 */
     private LocalDateTime createdAt;
 }

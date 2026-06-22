@@ -6,6 +6,7 @@ import com.haku3782.garden_app.service.CareLogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.UUID;
@@ -77,5 +78,23 @@ public class CareLogController {
                                         @PathVariable UUID id) {
         careLogService.delete(plantId, id);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * 指定したケアログに写真を添付する。
+     *
+     * <p>エンドポイント： POST /api/plants/{plantId}/care-logs/{id}/photo（multipart/form-data）
+     * 1件のケア記録に登録できる写真は1枚のみ。再アップロードすると上書きされる。
+     *
+     * @param plantId パスパラメータの植物 ID（紐付け先の検証用）
+     * @param id      写真を添付するケアログ ID
+     * @param photo   アップロードする画像ファイル（フォームのフィールド名は "photo"）
+     * @return HTTP 200 と更新後のケアログの情報
+     */
+    @PostMapping("/{id}/photo")
+    public ResponseEntity<CareLogResponse> uploadPhoto(@PathVariable UUID plantId,
+                                                         @PathVariable UUID id,
+                                                         @RequestParam("photo") MultipartFile photo) {
+        return ResponseEntity.ok(careLogService.uploadPhoto(plantId, id, photo));
     }
 }

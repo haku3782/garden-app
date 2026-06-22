@@ -28,6 +28,7 @@
         </select>
         <input v-model="newCareLog.caredAt" type="datetime-local" />
         <input v-model="newCareLog.memo" type="text" placeholder="メモ" />
+        <input ref="photoInput" type="file" accept="image/jpeg,image/png,image/webp" @change="handlePhotoSelect" />
         <button @click="handleCreateCareLog">記録追加</button>
       </div>
 
@@ -35,6 +36,7 @@
         <p>ケア記録がありません</p>
       </div>
       <div v-for="log in careLogs" :key="log.id" class="care-card">
+        <img v-if="log.photoUrl" :src="log.photoUrl" alt="ケア記録の写真" class="care-photo" />
         <span class="care-type">{{ careTypeLabel(log.careType) }}</span>
         <span class="care-date">{{ log.caredAt }}</span>
         <span v-if="log.memo" class="care-memo">{{ log.memo }}</span>
@@ -48,7 +50,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getPlants } from '@/api/plants'
-import { getCareLogs, createCareLog, deleteCareLog } from '@/api/careLogs'
+import { getCareLogs, createCareLog, deleteCareLog, uploadCareLogPhoto } from '@/api/careLogs'
 import CareHeatmap from '@/components/CareHeatmap.vue'
 import StreakCounter from '@/components/StreakCounter.vue'
 
@@ -62,6 +64,8 @@ const newCareLog = ref({
   caredAt: '',
   memo: ''
 })
+const photoInput = ref(null)
+const selectedPhoto = ref(null)
 
 const typeLabel = (type) => ({
   vegetable: '野菜', fruit: '果物', herb: 'ハーブ',
@@ -81,13 +85,22 @@ onMounted(async () => {
   careLogs.value = logsRes.data
 })
 
+function handlePhotoSelect(event) {
+  selectedPhoto.value = event.target.files[0] || null
+}
+
 async function handleCreateCareLog() {
   if (!newCareLog.value.careType) return
   if (!newCareLog.value.caredAt) newCareLog.value.caredAt = new Date().toISOString().slice(0, 16)
-  await createCareLog(route.params.id, newCareLog.value)
+  const created = await createCareLog(route.params.id, newCareLog.value)
+  if (selectedPhoto.value) {
+    await uploadCareLogPhoto(route.params.id, created.data.id, selectedPhoto.value)
+  }
   const res = await getCareLogs(route.params.id)
   careLogs.value = res.data
   newCareLog.value = { careType: '', caredAt: '', memo: '' }
+  selectedPhoto.value = null
+  if (photoInput.value) photoInput.value.value = ''
 }
 
 async function handleDeleteCareLog(id) {
@@ -104,6 +117,7 @@ async function handleDeleteCareLog(id) {
 input, select { padding: 0.75rem; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; }
 button { padding: 0.75rem 1.5rem; background: #4a9d5f; color: white; border: none; border-radius: 6px; cursor: pointer; }
 .care-card { display: flex; gap: 1rem; align-items: center; padding: 0.75rem 1rem; border: 1px solid #eee; border-radius: 8px; margin-bottom: 0.5rem; }
+.care-photo { width: 48px; height: 48px; object-fit: cover; border-radius: 6px; flex-shrink: 0; }
 .care-type { font-weight: 500; min-width: 80px; }
 .care-date { color: #999; }
 .care-memo { color: #666; flex: 1; }

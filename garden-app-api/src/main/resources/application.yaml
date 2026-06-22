@@ -29,11 +29,23 @@ spring:
     # 既存スキーマ（手動作成済み）をV1として既に適用済み扱いにする
     # → V1__baseline.sql は実行されず、以後のV2以降のみが実行される
     baseline-on-migrate: true
+  servlet:
+    multipart:
+      # ケア記録写真アップロードの上限（Supabase Storageバケット側の制限と合わせる）
+      max-file-size: 5MB
+      max-request-size: 5MB
 
 jwt:
   # 本番環境では環境変数 JWT_SECRET に強力なランダム文字列を設定すること
   # ローカルでは application.local.yaml で上書きされる
   secret: ${JWT_SECRET}
+
+supabase:
+  # Supabase Storage への画像アップロードに使用（service_role相当のsecret key）
+  # 本番では環境変数、ローカルでは application.local.yaml で設定する
+  url: ${SUPABASE_URL}
+  secret-key: ${SUPABASE_SECRET_KEY}
+  bucket: care-log-photos
 
 server:
   port: ${PORT:8081}

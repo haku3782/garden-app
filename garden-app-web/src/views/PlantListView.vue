@@ -2,7 +2,10 @@
   <div class="container">
     <header>
       <h1>🌱 家庭菜園管理</h1>
-      <button @click="handleLogout" class="logout-btn">ログアウト</button>
+      <div class="header-actions">
+        <button @click="router.push('/gallery')" class="gallery-btn">📷 ギャラリー</button>
+        <button @click="handleLogout" class="logout-btn">ログアウト</button>
+      </div>
     </header>
 
     <div class="add-form">
@@ -96,6 +99,8 @@ function handleLogout() {
 <style scoped>
 .container { max-width: 800px; margin: 0 auto; padding: 2rem; }
 header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+.header-actions { display: flex; gap: 0.5rem; }
+.gallery-btn { background: #4a7a9d; }
 .add-form { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 2rem; padding: 1.5rem; background: #f9f9f9; border-radius: 8px; }
 input, select { padding: 0.75rem; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; }
 button { padding: 0.75rem 1.5rem; background: #4a9d5f; color: white; border: none; border-radius: 6px; cursor: pointer; }

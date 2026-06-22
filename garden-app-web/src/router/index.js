@@ -29,6 +29,12 @@ const router = createRouter({
       name: 'plant-detail',
       component: () => import('@/views/PlantDetailView.vue'),
       meta: { requiresAuth: true }
+    },
+    {
+      path: '/gallery',
+      name: 'gallery',
+      component: () => import('@/views/GalleryView.vue'),
+      meta: { requiresAuth: true }
     }
   ]
 })

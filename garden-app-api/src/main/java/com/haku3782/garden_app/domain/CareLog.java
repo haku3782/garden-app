@@ -61,6 +61,12 @@ public class CareLog {
     private String memo;
 
     /**
+     * ケア記録に添付された写真のURL（Supabase Storage上の公開URL）。任意項目。
+     */
+    @Column(name = "photo_url")
+    private String photoUrl;
+
+    /**
      * レコードの作成日時。
      * DB への INSERT 直前に prePersist() によって自動セットされる。
      */

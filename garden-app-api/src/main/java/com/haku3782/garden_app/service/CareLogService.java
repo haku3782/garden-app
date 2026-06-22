@@ -4,14 +4,17 @@ import com.haku3782.garden_app.domain.CareLog;
 import com.haku3782.garden_app.domain.Plant;
 import com.haku3782.garden_app.dto.CareLogRequest;
 import com.haku3782.garden_app.dto.CareLogResponse;
+import com.haku3782.garden_app.dto.PhotoGalleryItemResponse;
 import com.haku3782.garden_app.repository.CareLogRepository;
 import com.haku3782.garden_app.repository.PlantRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -36,6 +39,15 @@ public class CareLogService {
 
     /** plants テーブルへのデータアクセスを担うリポジトリ（植物の存在確認に使用） */
     private final PlantRepository plantRepository;
+
+    /** Supabase Storage への画像アップロードを担うサービス */
+    private final SupabaseStorageService supabaseStorageService;
+
+    /** アップロードを許可する画像ファイルのMIMEタイプ */
+    private static final Set<String> ALLOWED_PHOTO_CONTENT_TYPES = Set.of("image/jpeg", "image/png", "image/webp");
+
+    /** アップロードを許可する画像ファイルの最大サイズ（5MB） */
+    private static final long MAX_PHOTO_SIZE_BYTES = 5L * 1024 * 1024;
 
     /**
      * SecurityContext からログイン中のユーザー名を取得する。
@@ -76,7 +88,26 @@ public class CareLogService {
         res.setCareType(careLog.getCareType());
         res.setCaredAt(careLog.getCaredAt());
         res.setMemo(careLog.getMemo());
+        res.setPhotoUrl(careLog.getPhotoUrl());
         res.setCreatedAt(careLog.getCreatedAt());
+        return res;
+    }
+
+    /**
+     * CareLog エンティティを PhotoGalleryItemResponse DTO に変換する（写真ギャラリー表示用）。
+     *
+     * @param careLog 変換元の CareLog エンティティ
+     * @return クライアントに返す PhotoGalleryItemResponse
+     */
+    private PhotoGalleryItemResponse toGalleryItem(CareLog careLog) {
+        PhotoGalleryItemResponse res = new PhotoGalleryItemResponse();
+        res.setId(careLog.getId());
+        res.setPlantId(careLog.getPlant().getId());
+        res.setPlantName(careLog.getPlant().getName());
+        res.setCareType(careLog.getCareType());
+        res.setCaredAt(careLog.getCaredAt());
+        res.setPhotoUrl(careLog.getPhotoUrl());
+        res.setMemo(careLog.getMemo());
         return res;
     }
 
@@ -149,5 +180,62 @@ public class CareLogService {
         }
         requireOwner(careLog.getPlant());
         careLogRepository.deleteById(id);
+    }
+
+    /**
+     * 指定したケアログに写真を添付する。
+     *
+     * <p>処理の流れ：
+     * <ol>
+     *   <li>ケアログ ID で DB を検索し、存在しない場合は例外をスロー</li>
+     *   <li>URL 上の plantId とケアログの紐付け先が一致するか確認</li>
+     *   <li>ログイン中のユーザーが所有する植物でない場合はアクセスを拒否</li>
+     *   <li>ファイルサイズ・MIMEタイプを検証</li>
+     *   <li>Supabase Storage にアップロードし、公開URLを CareLog に保存</li>
+     * </ol>
+     *
+     * <p>1件のケア記録に登録できる写真は1枚のみ。再アップロードすると上書きされる。
+     *
+     * @param plantId URL パス上の植物 ID（ケアログの紐付け先と一致するか確認するために使用）
+     * @param id      写真を添付するケアログ ID
+     * @param photo   アップロードする画像ファイル（JPEG/PNG/WebP、5MBまで）
+     * @return 更新後のケアログの CareLogResponse
+     * @throws RuntimeException        指定 ID のケアログが存在しない場合、または plantId と紐付け先が一致しない場合
+     * @throws AccessDeniedException   ログイン中のユーザーが所有者でない場合
+     * @throws IllegalArgumentException ファイルが空・サイズ超過・対応していない形式の場合
+     */
+    public CareLogResponse uploadPhoto(UUID plantId, UUID id, MultipartFile photo) {
+        CareLog careLog = careLogRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("ケアログが見つかりません"));
+        if (!careLog.getPlant().getId().equals(plantId)) {
+            throw new RuntimeException("指定された植物に紐づくケアログではありません");
+        }
+        requireOwner(careLog.getPlant());
+
+        if (photo == null || photo.isEmpty()) {
+            throw new IllegalArgumentException("ファイルが指定されていません");
+        }
+        if (photo.getSize() > MAX_PHOTO_SIZE_BYTES) {
+            throw new IllegalArgumentException("ファイルサイズは5MBまでです");
+        }
+        if (!ALLOWED_PHOTO_CONTENT_TYPES.contains(photo.getContentType())) {
+            throw new IllegalArgumentException("対応していないファイル形式です（JPEG/PNG/WebPのみ）");
+        }
+
+        String photoUrl = supabaseStorageService.upload(photo);
+        careLog.setPhotoUrl(photoUrl);
+        return toResponse(careLogRepository.save(careLog));
+    }
+
+    /**
+     * ログイン中のユーザーが所有する植物のうち、写真が登録されているケアログを
+     * ケア日付の降順で取得する（全植物横断の写真ギャラリー表示用）。
+     *
+     * @return 写真付きケアログのリスト（新しいケア日順）
+     */
+    public List<PhotoGalleryItemResponse> getPhotoGallery() {
+        return careLogRepository.findByPlant_User_UsernameAndPhotoUrlIsNotNullOrderByCaredAtDesc(getCurrentUsername())
+                .stream().map(this::toGalleryItem)
+                .collect(Collectors.toList());
     }
 }
