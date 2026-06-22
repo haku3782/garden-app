@@ -25,6 +25,10 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         "[format_sql]": true
+  flyway:
+    # 既存スキーマ（手動作成済み）をV1として既に適用済み扱いにする
+    # → V1__baseline.sql は実行されず、以後のV2以降のみが実行される
+    baseline-on-migrate: true
 
 jwt:
   # 本番環境では環境変数 JWT_SECRET に強力なランダム文字列を設定すること
