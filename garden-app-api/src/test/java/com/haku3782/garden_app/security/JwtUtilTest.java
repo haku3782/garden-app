@@ -35,7 +35,13 @@ class JwtUtilTest {
     @Test
     void validateToken_returnsFalseForTamperedToken() {
         String token = jwtUtil.generateToken("taro");
-        String tampered = token.substring(0, token.length() - 1) + (token.endsWith("a") ? "b" : "a");
+        // 末尾1文字の変更はbase64のパディング位置によって同一バイト列にデコードされ
+        // 署名が偶然一致してしまうことがあるため、ペイロード部分の中央付近を変更する
+        int payloadStart = token.indexOf('.') + 1;
+        int mutateIndex = payloadStart + (token.length() - payloadStart) / 2;
+        char original = token.charAt(mutateIndex);
+        char replacement = original == 'a' ? 'b' : 'a';
+        String tampered = token.substring(0, mutateIndex) + replacement + token.substring(mutateIndex + 1);
 
         assertThat(jwtUtil.validateToken(tampered)).isFalse();
     }
