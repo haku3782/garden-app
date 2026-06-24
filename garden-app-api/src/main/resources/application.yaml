@@ -35,6 +35,12 @@ spring:
       max-file-size: 5MB
       max-request-size: 5MB
 
+app:
+  flyway:
+    # Flywayマイグレーション専用の接続先（セッションプーリング、ポート5432）
+    # spring.datasource.url（アプリ本体用、トランザクションプーリング）とは別にする
+    url: ${FLYWAY_DATABASE_URL}
+
 jwt:
   # 本番環境では環境変数 JWT_SECRET に強力なランダム文字列を設定すること
   # ローカルでは application.local.yaml で上書きされる

@@ -42,6 +42,7 @@ jobs:
         working-directory: garden-app-api
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      FLYWAY_DATABASE_URL: ${{ secrets.FLYWAY_DATABASE_URL }}
       DATABASE_USERNAME: ${{ secrets.DATABASE_USERNAME }}
       DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
