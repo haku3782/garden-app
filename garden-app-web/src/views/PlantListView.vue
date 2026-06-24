@@ -46,7 +46,6 @@
         <option value="tree">樹木</option>
         <option value="other">その他</option>
       </select>
-      <input v-model="newPlant.plantedAt" type="datetime-local" />
       <input v-model="newPlant.memo" type="text" placeholder="メモ" />
       <button @click="handleCreate">追加</button>
     </div>
@@ -66,7 +65,6 @@ const plants = ref([])
 const newPlant = ref({
   name: '',
   type: '',
-  plantedAt: '',
   memo: ''
 })
 
@@ -101,14 +99,21 @@ onMounted(async () => {
   plants.value = res.data
 })
 
+// ローカル時刻のまま "YYYY-MM-DDTHH:mm" を作る（toISOStringはUTC変換され日付がずれるため使わない）
+function nowLocalDateTime() {
+  const now = new Date()
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`
+}
+
 async function handleCreate() {
   if (!newPlant.value.name || !newPlant.value.type) return
-  const data = { ...newPlant.value }
-  if (!data.plantedAt) data.plantedAt = null
+  // 植えた日は登録時点の日時を自動で使う
+  const data = { ...newPlant.value, plantedAt: nowLocalDateTime() }
   await createPlant(data)
   const res = await getPlants()
   plants.value = res.data
-  newPlant.value = { name: '', type: '', plantedAt: '', memo: '' }
+  newPlant.value = { name: '', type: '', memo: '' }
 }
 
 async function handleDelete(id) {
