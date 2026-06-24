@@ -28,7 +28,13 @@
         </select>
         <input v-model="newCareLog.caredAt" type="datetime-local" />
         <input v-model="newCareLog.memo" type="text" placeholder="メモ" />
-        <input ref="photoInput" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" @change="handlePhotoSelect" />
+        <div class="photo-select-row">
+          <input ref="cameraInput" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" @change="handlePhotoSelect" class="hidden-file-input" />
+          <input ref="galleryInput" type="file" accept="image/jpeg,image/png,image/webp" @change="handlePhotoSelect" class="hidden-file-input" />
+          <button type="button" @click="cameraInput.click()">📷 撮影</button>
+          <button type="button" @click="galleryInput.click()">🖼 ギャラリーから選択</button>
+          <span v-if="selectedPhoto" class="selected-photo-name">{{ selectedPhoto.name }}</span>
+        </div>
         <button @click="handleCreateCareLog">記録追加</button>
       </div>
 
@@ -64,7 +70,8 @@ const newCareLog = ref({
   caredAt: '',
   memo: ''
 })
-const photoInput = ref(null)
+const cameraInput = ref(null)
+const galleryInput = ref(null)
 const selectedPhoto = ref(null)
 
 const typeLabel = (type) => ({
@@ -100,7 +107,8 @@ async function handleCreateCareLog() {
   careLogs.value = res.data
   newCareLog.value = { careType: '', caredAt: '', memo: '' }
   selectedPhoto.value = null
-  if (photoInput.value) photoInput.value.value = ''
+  if (cameraInput.value) cameraInput.value.value = ''
+  if (galleryInput.value) galleryInput.value.value = ''
 }
 
 async function handleDeleteCareLog(id) {
@@ -116,6 +124,10 @@ async function handleDeleteCareLog(id) {
 .add-care-form { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.5rem; padding: 1.5rem; background: #f9f9f9; border-radius: 8px; }
 input, select { padding: 0.75rem; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; }
 button { padding: 0.75rem 1.5rem; background: #4a9d5f; color: white; border: none; border-radius: 6px; cursor: pointer; }
+.photo-select-row { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+.hidden-file-input { display: none; }
+.photo-select-row button { background: #4a7a9d; padding: 0.6rem 1rem; font-size: 0.9rem; }
+.selected-photo-name { color: #666; font-size: 0.85rem; }
 .care-card { display: flex; gap: 1rem; align-items: center; padding: 0.75rem 1rem; border: 1px solid #eee; border-radius: 8px; margin-bottom: 0.5rem; }
 .care-photo { width: 48px; height: 48px; object-fit: cover; border-radius: 6px; flex-shrink: 0; }
 .care-type { font-weight: 500; min-width: 80px; }
