@@ -9,9 +9,6 @@
       <p v-if="plant.memo">メモ：{{ plant.memo }}</p>
     </div>
 
-    <!-- ストリーク -->
-    <StreakCounter :care-logs="careLogs" />
-
     <!-- カレンダー -->
     <CareCalendar :care-logs="careLogs" />
 
@@ -58,7 +55,6 @@ import { useRoute, useRouter } from 'vue-router'
 import { getPlants } from '@/api/plants'
 import { getCareLogs, createCareLog, deleteCareLog, uploadCareLogPhoto } from '@/api/careLogs'
 import CareCalendar from '@/components/CareCalendar.vue'
-import StreakCounter from '@/components/StreakCounter.vue'
 
 const route = useRoute()
 const router = useRouter()
