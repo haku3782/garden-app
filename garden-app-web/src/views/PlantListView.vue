@@ -8,6 +8,32 @@
       </div>
     </header>
 
+    <div class="plant-list">
+      <h2>登録済みの植物</h2>
+
+      <div class="type-tabs">
+        <button
+          v-for="option in typeFilterOptions"
+          :key="option.value"
+          type="button"
+          class="type-tab"
+          :class="{ active: selectedType === option.value }"
+          @click="selectedType = option.value"
+        >{{ option.label }}</button>
+      </div>
+
+      <p v-if="filteredPlants.length === 0">植物が登録されていません</p>
+      <div v-for="plant in filteredPlants" :key="plant.id" class="plant-card">
+        <div class="plant-info" @click="goToDetail(plant.id)">
+          <img v-if="plant.latestPhotoUrl" :src="plant.latestPhotoUrl" alt="" class="plant-thumbnail" />
+          <span class="plant-name">{{ plant.name }}</span>
+          <span class="plant-type">{{ typeLabel(plant.type) }}</span>
+          <span class="plant-date">{{ plant.plantedAt }}</span>
+        </div>
+        <button @click="handleDelete(plant.id)" class="delete-btn">削除</button>
+      </div>
+    </div>
+
     <div class="add-form">
       <h2>植物を追加</h2>
       <input v-model="newPlant.name" type="text" placeholder="植物名" />
@@ -24,25 +50,11 @@
       <input v-model="newPlant.memo" type="text" placeholder="メモ" />
       <button @click="handleCreate">追加</button>
     </div>
-
-    <div class="plant-list">
-      <h2>登録済みの植物</h2>
-      <p v-if="plants.length === 0">植物が登録されていません</p>
-      <div v-for="plant in plants" :key="plant.id" class="plant-card">
-        <div class="plant-info" @click="goToDetail(plant.id)">
-          <img v-if="plant.latestPhotoUrl" :src="plant.latestPhotoUrl" alt="" class="plant-thumbnail" />
-          <span class="plant-name">{{ plant.name }}</span>
-          <span class="plant-type">{{ typeLabel(plant.type) }}</span>
-          <span class="plant-date">{{ plant.plantedAt }}</span>
-        </div>
-        <button @click="handleDelete(plant.id)" class="delete-btn">削除</button>
-      </div>
-    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { getPlants, createPlant, deletePlant } from '@/api/plants'
@@ -66,6 +78,23 @@ const typeLabel = (type) => ({
   tree: '樹木',
   other: 'その他'
 }[type] || type)
+
+const selectedType = ref('all')
+
+const typeFilterOptions = [
+  { value: 'all', label: 'すべて' },
+  { value: 'vegetable', label: '野菜' },
+  { value: 'fruit', label: '果物' },
+  { value: 'herb', label: 'ハーブ' },
+  { value: 'flower', label: '花' },
+  { value: 'tree', label: '樹木' },
+  { value: 'other', label: 'その他' }
+]
+
+const filteredPlants = computed(() => {
+  if (selectedType.value === 'all') return plants.value
+  return plants.value.filter(p => p.type === selectedType.value)
+})
 
 onMounted(async () => {
   const res = await getPlants()
@@ -106,6 +135,9 @@ header { display: flex; justify-content: space-between; align-items: center; mar
 input, select { padding: 0.75rem; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; }
 button { padding: 0.75rem 1.5rem; background: #4a9d5f; color: white; border: none; border-radius: 6px; cursor: pointer; }
 .logout-btn { background: #999; }
+.type-tabs { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
+.type-tab { background: #fff; color: #333; border: 1px solid #ccc; padding: 0.5rem 1rem; font-size: 0.9rem; border-radius: 20px; }
+.type-tab.active { background: #4a9d5f; color: #fff; border-color: #4a9d5f; }
 .plant-card { display: flex; justify-content: space-between; align-items: center; padding: 1rem; border: 1px solid #eee; border-radius: 8px; margin-bottom: 0.5rem; }
 .plant-info { display: flex; gap: 1rem; align-items: center; cursor: pointer; flex: 1; }
 .plant-thumbnail { width: 40px; height: 40px; object-fit: cover; border-radius: 6px; flex-shrink: 0; }
