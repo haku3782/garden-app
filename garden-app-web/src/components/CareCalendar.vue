@@ -4,6 +4,7 @@
       <button class="nav-btn" @click="prevMonth">◀</button>
       <h3>{{ viewYear }}年{{ viewMonth + 1 }}月</h3>
       <button class="nav-btn" @click="nextMonth">▶</button>
+      <button class="today-btn" @click="goToToday">今日</button>
     </div>
 
     <div class="weekdays">
@@ -15,8 +16,9 @@
         v-for="(cell, index) in cells"
         :key="index"
         class="cell"
-        :class="{ 'is-today': cell.isToday, 'is-empty': !cell.day }"
+        :class="{ 'is-today': cell.isToday, 'is-empty': !cell.day, 'is-clickable': !!cell.day && !cell.isFuture, 'is-future': cell.isFuture, 'is-selected': cell.date === selectedDate }"
         :title="cell.tooltip"
+        @click="cell.day && !cell.isFuture && $emit('select-date', cell.date)"
       >
         <span v-if="cell.day" class="day-num">{{ cell.day }}</span>
         <span v-if="cell.icons.length" class="day-icons">{{ cell.icons.join('') }}</span>
@@ -32,8 +34,14 @@ const props = defineProps({
   careLogs: {
     type: Array,
     default: () => []
+  },
+  selectedDate: {
+    type: String,
+    default: null
   }
 })
+
+const emit = defineEmits(['select-date'])
 
 const weekdays = ['日', '月', '火', '水', '木', '金', '土']
 
@@ -62,6 +70,12 @@ function nextMonth() {
   }
 }
 
+function goToToday() {
+  viewYear.value = today.getFullYear()
+  viewMonth.value = today.getMonth()
+  emit('select-date', toDateStr(today.getFullYear(), today.getMonth(), today.getDate()))
+}
+
 function toDateStr(year, month, day) {
   return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
 }
@@ -87,16 +101,17 @@ const cells = computed(() => {
 
   const result = []
   for (let i = 0; i < firstWeekday; i++) {
-    result.push({ day: null, icons: [], isToday: false, tooltip: '' })
+    result.push({ day: null, date: null, icons: [], isToday: false, isFuture: false, tooltip: '' })
   }
   for (let day = 1; day <= daysInMonth; day++) {
     const dateStr = toDateStr(year, month, day)
     const types = careTypesByDate.value.get(dateStr)
     const icons = types ? [...types].map(t => careTypeIcon[t] || '📝') : []
+    const isFuture = dateStr > todayStr
     const tooltip = types
       ? `${dateStr}: ${[...types].map(t => careTypeLabel[t] || t).join('・')}`
       : dateStr
-    result.push({ day, icons, isToday: dateStr === todayStr, tooltip })
+    result.push({ day, date: dateStr, icons, isToday: dateStr === todayStr, isFuture, tooltip })
   }
   return result
 })
@@ -107,11 +122,15 @@ const cells = computed(() => {
 .calendar-header { display: flex; align-items: center; justify-content: center; gap: 1rem; margin-bottom: 0.75rem; }
 .calendar-header h3 { margin: 0; min-width: 8em; text-align: center; }
 .nav-btn { background: #f0f0f0; color: #333; border: none; border-radius: 6px; padding: 0.4rem 0.8rem; cursor: pointer; }
+.today-btn { background: #4a7a9d; color: #fff; border: none; border-radius: 6px; padding: 0.4rem 0.8rem; font-size: 0.85rem; cursor: pointer; }
 .weekdays { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 12px; color: #999; margin-bottom: 4px; }
 .grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
 .cell { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 6px; background: #f9f9f9; gap: 2px; }
 .cell.is-empty { background: transparent; }
 .cell.is-today { background: #e3f3e6; border: 2px solid #4a9d5f; }
+.cell.is-clickable { cursor: pointer; }
+.cell.is-future { opacity: 0.4; }
+.cell.is-selected { background: #cce8d4; box-shadow: inset 0 0 0 2px #2d6a3f; }
 .day-num { font-size: 12px; color: #666; }
 .day-icons { font-size: 12px; line-height: 1; }
 </style>
