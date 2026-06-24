@@ -12,8 +12,8 @@
     <!-- ストリーク -->
     <StreakCounter :care-logs="careLogs" />
 
-    <!-- ヒートマップ -->
-    <CareHeatmap :care-logs="careLogs" />
+    <!-- カレンダー -->
+    <CareCalendar :care-logs="careLogs" />
 
     <div class="care-section">
       <h2>ケア記録</h2>
@@ -57,7 +57,7 @@ import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getPlants } from '@/api/plants'
 import { getCareLogs, createCareLog, deleteCareLog, uploadCareLogPhoto } from '@/api/careLogs'
-import CareHeatmap from '@/components/CareHeatmap.vue'
+import CareCalendar from '@/components/CareCalendar.vue'
 import StreakCounter from '@/components/StreakCounter.vue'
 
 const route = useRoute()
