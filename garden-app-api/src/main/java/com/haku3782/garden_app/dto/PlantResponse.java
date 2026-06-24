@@ -36,6 +36,9 @@ public class PlantResponse {
     /** メモ */
     private String memo;
 
+    /** 最新の写真付きケア記録の写真URL（無ければ null） */
+    private String latestPhotoUrl;
+
     /** レコードの作成日時 */
     private LocalDateTime createdAt;
 }

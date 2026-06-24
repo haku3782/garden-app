@@ -3,6 +3,7 @@ package com.haku3782.garden_app.repository;
 import com.haku3782.garden_app.domain.CareLog;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -56,4 +57,17 @@ public interface CareLogRepository extends JpaRepository<CareLog, UUID> {
      * @return 写真付きケアログのリスト（新しいケア日順）
      */
     List<CareLog> findByPlant_User_UsernameAndPhotoUrlIsNotNullOrderByCaredAtDesc(String username);
+
+    /**
+     * 指定した植物 ID に紐づく、写真が登録されている最新のケアログを1件取得する
+     * （植物一覧でのサムネイル表示用）。
+     *
+     * <p>生成される SQL のイメージ：
+     * {@code SELECT * FROM care_logs WHERE plant_id = ? AND photo_url IS NOT NULL
+     *         ORDER BY cared_at DESC LIMIT 1}
+     *
+     * @param plantId 対象の植物 ID
+     * @return 写真付き最新ケアログ（無ければ空）
+     */
+    Optional<CareLog> findFirstByPlantIdAndPhotoUrlIsNotNullOrderByCaredAtDesc(UUID plantId);
 }

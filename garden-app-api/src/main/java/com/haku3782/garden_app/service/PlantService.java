@@ -1,9 +1,11 @@
 package com.haku3782.garden_app.service;
 
+import com.haku3782.garden_app.domain.CareLog;
 import com.haku3782.garden_app.domain.Plant;
 import com.haku3782.garden_app.domain.User;
 import com.haku3782.garden_app.dto.PlantRequest;
 import com.haku3782.garden_app.dto.PlantResponse;
+import com.haku3782.garden_app.repository.CareLogRepository;
 import com.haku3782.garden_app.repository.PlantRepository;
 import com.haku3782.garden_app.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +38,9 @@ public class PlantService {
 
     /** users テーブルへのデータアクセスを担うリポジトリ */
     private final UserRepository userRepository;
+
+    /** care_logs テーブルへのデータアクセスを担うリポジトリ（最新写真の取得に使用） */
+    private final CareLogRepository careLogRepository;
 
     /**
      * SecurityContext からログイン中のユーザー名を取得する。
@@ -77,6 +82,10 @@ public class PlantService {
         res.setType(plant.getType());
         res.setPlantedAt(plant.getPlantedAt());
         res.setMemo(plant.getMemo());
+        res.setLatestPhotoUrl(
+                careLogRepository.findFirstByPlantIdAndPhotoUrlIsNotNullOrderByCaredAtDesc(plant.getId())
+                        .map(CareLog::getPhotoUrl)
+                        .orElse(null));
         res.setCreatedAt(plant.getCreatedAt());
         return res;
     }

@@ -1,10 +1,12 @@
 package com.haku3782.garden_app.service;
 
+import com.haku3782.garden_app.domain.CareLog;
 import com.haku3782.garden_app.domain.Plant;
 import com.haku3782.garden_app.domain.PlantType;
 import com.haku3782.garden_app.domain.User;
 import com.haku3782.garden_app.dto.PlantRequest;
 import com.haku3782.garden_app.dto.PlantResponse;
+import com.haku3782.garden_app.repository.CareLogRepository;
 import com.haku3782.garden_app.repository.PlantRepository;
 import com.haku3782.garden_app.repository.UserRepository;
 import org.junit.jupiter.api.AfterEach;
@@ -38,6 +40,9 @@ class PlantServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private CareLogRepository careLogRepository;
 
     @InjectMocks
     private PlantService plantService;
@@ -76,6 +81,41 @@ class PlantServiceTest {
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getName()).isEqualTo("トマト");
+    }
+
+    @Test
+    void getAll_includesLatestPhotoUrlWhenAvailable() {
+        UUID plantId = UUID.randomUUID();
+        Plant plant = new Plant();
+        plant.setId(plantId);
+        plant.setName("トマト");
+        plant.setType(PlantType.vegetable);
+
+        CareLog log = new CareLog();
+        log.setPhotoUrl("https://example.supabase.co/storage/v1/object/public/care-log-photos/abc.jpg");
+
+        when(plantRepository.findByUserUsername("taro")).thenReturn(List.of(plant));
+        when(careLogRepository.findFirstByPlantIdAndPhotoUrlIsNotNullOrderByCaredAtDesc(plantId))
+                .thenReturn(Optional.of(log));
+
+        List<PlantResponse> result = plantService.getAll();
+
+        assertThat(result.get(0).getLatestPhotoUrl())
+                .isEqualTo("https://example.supabase.co/storage/v1/object/public/care-log-photos/abc.jpg");
+    }
+
+    @Test
+    void getAll_latestPhotoUrlIsNullWhenNoPhotoExists() {
+        Plant plant = new Plant();
+        plant.setId(UUID.randomUUID());
+        plant.setName("トマト");
+        plant.setType(PlantType.vegetable);
+
+        when(plantRepository.findByUserUsername("taro")).thenReturn(List.of(plant));
+
+        List<PlantResponse> result = plantService.getAll();
+
+        assertThat(result.get(0).getLatestPhotoUrl()).isNull();
     }
 
     @Test

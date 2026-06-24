@@ -30,6 +30,7 @@
       <p v-if="plants.length === 0">植物が登録されていません</p>
       <div v-for="plant in plants" :key="plant.id" class="plant-card">
         <div class="plant-info" @click="goToDetail(plant.id)">
+          <img v-if="plant.latestPhotoUrl" :src="plant.latestPhotoUrl" alt="" class="plant-thumbnail" />
           <span class="plant-name">{{ plant.name }}</span>
           <span class="plant-type">{{ typeLabel(plant.type) }}</span>
           <span class="plant-date">{{ plant.plantedAt }}</span>
@@ -106,7 +107,8 @@ input, select { padding: 0.75rem; border: 1px solid #ccc; border-radius: 6px; fo
 button { padding: 0.75rem 1.5rem; background: #4a9d5f; color: white; border: none; border-radius: 6px; cursor: pointer; }
 .logout-btn { background: #999; }
 .plant-card { display: flex; justify-content: space-between; align-items: center; padding: 1rem; border: 1px solid #eee; border-radius: 8px; margin-bottom: 0.5rem; }
-.plant-info { display: flex; gap: 1rem; cursor: pointer; flex: 1; }
+.plant-info { display: flex; gap: 1rem; align-items: center; cursor: pointer; flex: 1; }
+.plant-thumbnail { width: 40px; height: 40px; object-fit: cover; border-radius: 6px; flex-shrink: 0; }
 .plant-name { font-weight: 500; }
 .plant-type { color: #4a9d5f; }
 .plant-date { color: #999; font-size: 0.9rem; }
