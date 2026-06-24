@@ -95,11 +95,15 @@ onMounted(async () => {
 const PHOTO_MAX_SIZE = 1600
 const PHOTO_QUALITY = 0.8
 
-// スマホのカメラ画像は数MB～十数MBになることがあり、そのまま処理すると
-// 低スペック端末でブラウザがメモリ不足になることがあるため、
-// 縮小・再エンコードしてから保持する
+// スマホの高画素カメラ（数千万画素）はデコードしただけで数百MBのメモリを
+// 使うため、resizeWidthで「デコード時点」から縮小サイズを指定し、
+// 元の巨大なビットマップを一切メモリに展開しないようにする
 async function compressImage(file) {
-  const bitmap = await createImageBitmap(file)
+  const bitmap = await createImageBitmap(file, {
+    resizeWidth: PHOTO_MAX_SIZE,
+    resizeQuality: 'medium',
+    imageOrientation: 'from-image'
+  })
   let { width, height } = bitmap
   if (width > PHOTO_MAX_SIZE || height > PHOTO_MAX_SIZE) {
     const ratio = Math.min(PHOTO_MAX_SIZE / width, PHOTO_MAX_SIZE / height)
