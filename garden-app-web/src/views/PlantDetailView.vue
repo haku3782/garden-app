@@ -28,7 +28,7 @@
         </select>
         <input v-model="newCareLog.caredAt" type="datetime-local" />
         <input v-model="newCareLog.memo" type="text" placeholder="メモ" />
-        <input ref="photoInput" type="file" accept="image/jpeg,image/png,image/webp" @change="handlePhotoSelect" />
+        <input ref="photoInput" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" @change="handlePhotoSelect" />
         <button @click="handleCreateCareLog">記録追加</button>
       </div>
 
