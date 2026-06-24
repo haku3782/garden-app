@@ -25,6 +25,18 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
+      path: '/plants/new',
+      name: 'plant-add',
+      component: () => import('@/views/PlantAddView.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/plants/:id/care/new',
+      name: 'care-log-add',
+      component: () => import('@/views/CareLogAddView.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
       path: '/plants/:id',
       name: 'plant-detail',
       component: () => import('@/views/PlantDetailView.vue'),

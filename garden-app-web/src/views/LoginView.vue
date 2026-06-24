@@ -62,4 +62,8 @@ button {
   cursor: pointer;
 }
 .error { color: red; }
+
+@media (max-width: 600px) {
+  .auth-container { margin: 40px auto; padding: 1.5rem; }
+}
 </style>

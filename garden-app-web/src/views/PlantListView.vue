@@ -3,8 +3,8 @@
     <header>
       <h1>🌱 家庭菜園管理</h1>
       <div class="header-actions">
-        <button @click="router.push('/gallery')" class="gallery-btn">📷 ギャラリー</button>
-        <button @click="handleLogout" class="logout-btn">ログアウト</button>
+        <button @click="router.push('/gallery')" class="ghost-btn">📷 ギャラリー</button>
+        <button @click="handleLogout" class="ghost-btn">ログアウト</button>
       </div>
     </header>
 
@@ -22,33 +22,19 @@
         >{{ option.label }}</button>
       </div>
 
-      <p v-if="filteredPlants.length === 0">植物が登録されていません</p>
-      <div v-for="plant in filteredPlants" :key="plant.id" class="plant-card">
-        <div class="plant-info" @click="goToDetail(plant.id)">
-          <img v-if="plant.latestPhotoUrl" :src="plant.latestPhotoUrl" alt="" class="plant-thumbnail" />
-          <span class="plant-name">{{ plant.name }}</span>
-          <span class="plant-type">{{ typeLabel(plant.type) }}</span>
-          <span class="plant-date">{{ plant.plantedAt }}</span>
+      <p v-if="filteredPlants.length === 0" class="empty-message">植物が登録されていません</p>
+      <div class="plant-grid">
+        <div v-for="plant in filteredPlants" :key="plant.id" class="plant-card">
+          <div class="plant-info" @click="goToDetail(plant.id)">
+            <img v-if="plant.latestPhotoUrl" :src="plant.latestPhotoUrl" alt="" class="plant-thumbnail" />
+            <div v-else class="plant-thumbnail plant-thumbnail-placeholder"></div>
+            <span class="plant-name">{{ plant.name }}</span>
+          </div>
         </div>
-        <button @click="handleDelete(plant.id)" class="delete-btn">削除</button>
       </div>
     </div>
 
-    <div class="add-form">
-      <h2>植物を追加</h2>
-      <input v-model="newPlant.name" type="text" placeholder="植物名" />
-      <select v-model="newPlant.type">
-        <option value="">種類を選択</option>
-        <option value="vegetable">野菜</option>
-        <option value="fruit">果物</option>
-        <option value="herb">ハーブ</option>
-        <option value="flower">花</option>
-        <option value="tree">樹木</option>
-        <option value="other">その他</option>
-      </select>
-      <input v-model="newPlant.memo" type="text" placeholder="メモ" />
-      <button @click="handleCreate">追加</button>
-    </div>
+    <button @click="router.push('/plants/new')" class="add-plant-btn">＋ 植物を追加</button>
   </div>
 </template>
 
@@ -56,26 +42,12 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { getPlants, createPlant, deletePlant } from '@/api/plants'
+import { getPlants } from '@/api/plants'
 
 const router = useRouter()
 const authStore = useAuthStore()
 
 const plants = ref([])
-const newPlant = ref({
-  name: '',
-  type: '',
-  memo: ''
-})
-
-const typeLabel = (type) => ({
-  vegetable: '野菜',
-  fruit: '果物',
-  herb: 'ハーブ',
-  flower: '花',
-  tree: '樹木',
-  other: 'その他'
-}[type] || type)
 
 const selectedType = ref('all')
 
@@ -99,28 +71,6 @@ onMounted(async () => {
   plants.value = res.data
 })
 
-// ローカル時刻のまま "YYYY-MM-DDTHH:mm" を作る（toISOStringはUTC変換され日付がずれるため使わない）
-function nowLocalDateTime() {
-  const now = new Date()
-  const pad = (n) => String(n).padStart(2, '0')
-  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`
-}
-
-async function handleCreate() {
-  if (!newPlant.value.name || !newPlant.value.type) return
-  // 植えた日は登録時点の日時を自動で使う
-  const data = { ...newPlant.value, plantedAt: nowLocalDateTime() }
-  await createPlant(data)
-  const res = await getPlants()
-  plants.value = res.data
-  newPlant.value = { name: '', type: '', memo: '' }
-}
-
-async function handleDelete(id) {
-  await deletePlant(id)
-  plants.value = plants.value.filter(p => p.id !== id)
-}
-
 function goToDetail(id) {
   router.push(`/plants/${id}`)
 }
@@ -132,22 +82,108 @@ function handleLogout() {
 </script>
 
 <style scoped>
-.container { max-width: 800px; margin: 0 auto; padding: 2rem; }
-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
-.header-actions { display: flex; gap: 0.5rem; }
-.gallery-btn { background: #4a7a9d; }
-.add-form { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 2rem; padding: 1.5rem; background: #f9f9f9; border-radius: 8px; }
-input, select { padding: 0.75rem; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; }
-button { padding: 0.75rem 1.5rem; background: #4a9d5f; color: white; border: none; border-radius: 6px; cursor: pointer; }
-.logout-btn { background: #999; }
+.container {
+  --color-primary: #4a9d5f;
+  --color-primary-dark: #3d8350;
+  --color-accent: #4a7a9d;
+  --color-muted: #767676;
+  --color-border: #e3e3e3;
+  --color-bg-soft: #f7f8f7;
+  --radius: 10px;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 2px 10px rgba(0, 0, 0, 0.08);
+
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 1rem;
+  color: #2d3436;
+}
+
+header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+header h1 { font-size: 1.3rem; margin: 0; }
+.header-actions { display: flex; gap: 0.5rem; width: 100%; justify-content: flex-end; }
+
+h2 { font-size: 1.05rem; margin-bottom: 0.75rem; }
+
+button {
+  padding: 0.65rem 1.1rem;
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.15s, transform 0.05s;
+}
+button:hover { background: var(--color-primary-dark); }
+button:active { transform: scale(0.97); }
+
+.ghost-btn {
+  background: transparent;
+  color: var(--color-muted);
+  border: 1px solid var(--color-border);
+  padding: 0.45rem 0.8rem;
+  font-size: 0.85rem;
+}
+.ghost-btn:hover { background: var(--color-bg-soft); color: #2d3436; }
+
 .type-tabs { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
-.type-tab { background: #fff; color: #333; border: 1px solid #ccc; padding: 0.5rem 1rem; font-size: 0.9rem; border-radius: 20px; }
-.type-tab.active { background: #4a9d5f; color: #fff; border-color: #4a9d5f; }
-.plant-card { display: flex; justify-content: space-between; align-items: center; padding: 1rem; border: 1px solid #eee; border-radius: 8px; margin-bottom: 0.5rem; }
-.plant-info { display: flex; gap: 1rem; align-items: center; cursor: pointer; flex: 1; }
-.plant-thumbnail { width: 40px; height: 40px; object-fit: cover; border-radius: 6px; flex-shrink: 0; }
+.type-tab {
+  background: #fff;
+  color: #2d3436;
+  border: 1px solid var(--color-border);
+  padding: 0.45rem 0.9rem;
+  font-size: 0.85rem;
+  border-radius: 999px;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+.type-tab.active { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
+
+.empty-message { color: var(--color-muted); min-height: 160px; display: flex; align-items: center; }
+
+.plant-list { margin-bottom: 2rem; }
+
+.plant-grid { display: flex; flex-direction: column; gap: 0.6rem; }
+
+.plant-card {
+  display: flex;
+  align-items: center;
+  padding: 0.85rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: #fff;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.15s;
+}
+.plant-card:hover { box-shadow: var(--shadow-md); }
+
+.plant-info { display: flex; gap: 0.85rem; align-items: center; cursor: pointer; flex: 1; min-width: 0; }
+.plant-thumbnail { width: 64px; height: 64px; object-fit: cover; border-radius: var(--radius); flex-shrink: 0; }
+.plant-thumbnail-placeholder { background: var(--color-bg-soft); }
 .plant-name { font-weight: 500; }
-.plant-type { color: #4a9d5f; }
-.plant-date { color: #999; font-size: 0.9rem; }
-.delete-btn { background: #e74c3c; padding: 0.5rem 1rem; }
+
+.add-plant-btn { width: 100%; }
+
+@media (min-width: 600px) {
+  header { flex-direction: row; align-items: center; }
+  header h1 { font-size: 1.5rem; }
+  .header-actions { width: auto; }
+}
+
+@media (min-width: 768px) {
+  .container { max-width: 900px; padding: 2rem; }
+  .plant-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
+  .add-plant-btn { width: auto; }
+}
+
+@media (min-width: 1024px) {
+  .container { max-width: 1000px; }
+  header h1 { font-size: 1.7rem; }
+}
 </style>

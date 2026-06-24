@@ -51,4 +51,10 @@ onMounted(async () => {
 .gallery-care-type { color: #4a9d5f; font-size: 0.9rem; }
 .gallery-date { color: #999; font-size: 0.85rem; }
 .gallery-memo { color: #666; font-size: 0.9rem; }
+
+@media (max-width: 600px) {
+  .container { padding: 1rem; }
+  .gallery-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.75rem; }
+  .gallery-photo { height: 120px; }
+}
 </style>
