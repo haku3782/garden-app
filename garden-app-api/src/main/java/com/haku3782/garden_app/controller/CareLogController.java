@@ -24,6 +24,7 @@ import java.util.UUID;
  * <ul>
  *   <li>GET    /api/plants/{plantId}/care-logs       : 指定植物のケアログを全件取得</li>
  *   <li>POST   /api/plants/{plantId}/care-logs       : ケアログを新規登録</li>
+ *   <li>PUT    /api/plants/{plantId}/care-logs/{id}  : ケアログを更新</li>
  *   <li>DELETE /api/plants/{plantId}/care-logs/{id}  : ケアログを削除</li>
  * </ul>
  */
@@ -64,6 +65,23 @@ public class CareLogController {
     }
 
     /**
+     * 指定した ID のケアログを更新する（既存データの編集用）。
+     *
+     * <p>エンドポイント： PUT /api/plants/{plantId}/care-logs/{id}
+     *
+     * @param plantId パスパラメータの植物 ID（紐付け先の検証用）
+     * @param id      更新対象のケアログ ID
+     * @param request 更新後のケアの種類・日付・メモを含むリクエスト body
+     * @return HTTP 200 と更新後のケアログの情報
+     */
+    @PutMapping("/{id}")
+    public ResponseEntity<CareLogResponse> update(@PathVariable UUID plantId,
+                                                   @PathVariable UUID id,
+                                                   @RequestBody CareLogRequest request) {
+        return ResponseEntity.ok(careLogService.update(plantId, id, request));
+    }
+
+    /**
      * 指定した ID のケアログを削除する。
      *
      * <p>エンドポイント： DELETE /api/plants/{plantId}/care-logs/{id}
@@ -96,5 +114,20 @@ public class CareLogController {
                                                          @PathVariable UUID id,
                                                          @RequestParam("photo") MultipartFile photo) {
         return ResponseEntity.ok(careLogService.uploadPhoto(plantId, id, photo));
+    }
+
+    /**
+     * 指定したケアログの写真を削除する。
+     *
+     * <p>エンドポイント： DELETE /api/plants/{plantId}/care-logs/{id}/photo
+     *
+     * @param plantId パスパラメータの植物 ID（紐付け先の検証用）
+     * @param id      写真を削除するケアログ ID
+     * @return HTTP 200 と更新後のケアログの情報
+     */
+    @DeleteMapping("/{id}/photo")
+    public ResponseEntity<CareLogResponse> deletePhoto(@PathVariable UUID plantId,
+                                                         @PathVariable UUID id) {
+        return ResponseEntity.ok(careLogService.deletePhoto(plantId, id));
     }
 }

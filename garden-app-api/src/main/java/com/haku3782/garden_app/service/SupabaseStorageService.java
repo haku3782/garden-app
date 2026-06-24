@@ -61,6 +61,28 @@ public class SupabaseStorageService {
         return supabaseUrl + "/storage/v1/object/public/" + bucket + "/" + path;
     }
 
+    /**
+     * Supabase Storageから画像ファイルを削除する。
+     *
+     * <p>uploadが返した公開URL（{@code {supabaseUrl}/storage/v1/object/public/{bucket}/...}）
+     * からパス部分を取り出して削除APIを呼び出す。URLの形式が想定と異なる場合は何もしない。
+     *
+     * @param photoUrl 削除対象の画像の公開URL
+     */
+    public void delete(String photoUrl) {
+        String prefix = supabaseUrl + "/storage/v1/object/public/" + bucket + "/";
+        if (photoUrl == null || !photoUrl.startsWith(prefix)) {
+            return;
+        }
+        String path = photoUrl.substring(prefix.length());
+
+        restClient.delete()
+                .uri(supabaseUrl + "/storage/v1/object/" + bucket + "/" + path)
+                .header("Authorization", "Bearer " + secretKey)
+                .retrieve()
+                .toBodilessEntity();
+    }
+
     private String extractExtension(String filename) {
         if (filename == null) {
             return "";

@@ -162,6 +162,32 @@ public class CareLogService {
     }
 
     /**
+     * 指定した ID のケアログを更新する（既存データの編集用）。
+     *
+     * <p>URL 上の plantId と紐付け先の植物が一致しない場合、および
+     * ログイン中のユーザーが所有する植物でない場合はアクセスを拒否する。
+     *
+     * @param plantId URL パス上の植物 ID（ケアログの紐付け先と一致するか確認するために使用）
+     * @param id      更新対象のケアログ ID
+     * @param request 更新後のケアの種類・日付・メモ
+     * @return 更新後のケアログの CareLogResponse
+     * @throws RuntimeException      指定 ID のケアログが存在しない場合、または plantId と紐付け先が一致しない場合
+     * @throws AccessDeniedException ログイン中のユーザーが所有者でない場合
+     */
+    public CareLogResponse update(UUID plantId, UUID id, CareLogRequest request) {
+        CareLog careLog = careLogRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("ケアログが見つかりません"));
+        if (!careLog.getPlant().getId().equals(plantId)) {
+            throw new RuntimeException("指定された植物に紐づくケアログではありません");
+        }
+        requireOwner(careLog.getPlant());
+        careLog.setCareType(request.getCareType());
+        careLog.setCaredAt(request.getCaredAt());
+        careLog.setMemo(request.getMemo());
+        return toResponse(careLogRepository.save(careLog));
+    }
+
+    /**
      * 指定した ID のケアログを削除する。
      *
      * <p>URL 上の plantId と紐付け先の植物が一致しない場合、および
@@ -224,6 +250,33 @@ public class CareLogService {
 
         String photoUrl = supabaseStorageService.upload(photo);
         careLog.setPhotoUrl(photoUrl);
+        return toResponse(careLogRepository.save(careLog));
+    }
+
+    /**
+     * 指定したケアログの写真を削除する。
+     *
+     * <p>Supabase Storage上のファイルも合わせて削除し、CareLogのphoto_urlをnullに戻す。
+     * 写真が登録されていない場合は何もしない。
+     *
+     * @param plantId URL パス上の植物 ID（ケアログの紐付け先と一致するか確認するために使用）
+     * @param id      写真を削除するケアログ ID
+     * @return 更新後のケアログの CareLogResponse
+     * @throws RuntimeException      指定 ID のケアログが存在しない場合、または plantId と紐付け先が一致しない場合
+     * @throws AccessDeniedException ログイン中のユーザーが所有者でない場合
+     */
+    public CareLogResponse deletePhoto(UUID plantId, UUID id) {
+        CareLog careLog = careLogRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("ケアログが見つかりません"));
+        if (!careLog.getPlant().getId().equals(plantId)) {
+            throw new RuntimeException("指定された植物に紐づくケアログではありません");
+        }
+        requireOwner(careLog.getPlant());
+
+        if (careLog.getPhotoUrl() != null) {
+            supabaseStorageService.delete(careLog.getPhotoUrl());
+            careLog.setPhotoUrl(null);
+        }
         return toResponse(careLogRepository.save(careLog));
     }
 

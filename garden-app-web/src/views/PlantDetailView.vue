@@ -26,7 +26,7 @@
             @click="newCareLog.careType = option.value"
           >{{ option.label }}</button>
         </div>
-        <p class="care-date-display">登録日：{{ selectedDate || '（カレンダーで日付を選択してください）' }}</p>
+        <p class="care-date-display">登録日時：現在時刻で自動登録されます</p>
         <input v-model="newCareLog.memo" type="text" placeholder="メモ" />
         <div class="photo-select-row">
           <input ref="cameraInput" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" @change="handlePhotoSelect" class="hidden-file-input" />
@@ -35,18 +35,53 @@
           <button type="button" @click="galleryInput.click()">🖼 ギャラリーから選択</button>
           <span v-if="selectedPhoto" class="selected-photo-name">{{ selectedPhoto.name }}</span>
         </div>
-        <button :disabled="!selectedDate" @click="handleCreateCareLog">記録追加</button>
+        <button @click="handleCreateCareLog">記録追加</button>
       </div>
+
+      <!-- 編集時の写真選択用（v-forの外に置き、編集中のログにのみ使う） -->
+      <input ref="editCameraInput" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" @change="handleEditPhotoSelect" class="hidden-file-input" />
+      <input ref="editGalleryInput" type="file" accept="image/jpeg,image/png,image/webp" @change="handleEditPhotoSelect" class="hidden-file-input" />
 
       <div v-if="filteredCareLogs.length === 0">
         <p>ケア記録がありません</p>
       </div>
       <div v-for="log in filteredCareLogs" :key="log.id" class="care-card">
-        <img v-if="log.photoUrl" :src="log.photoUrl" alt="ケア記録の写真" class="care-photo" />
-        <span class="care-type">{{ careTypeLabel(log.careType) }}</span>
-        <span class="care-date">{{ log.caredAt }}</span>
-        <span v-if="log.memo" class="care-memo">{{ log.memo }}</span>
-        <button @click="handleDeleteCareLog(log.id)" class="delete-btn">削除</button>
+        <div v-if="editingId === log.id" class="edit-care-form">
+          <div class="care-type-select">
+            <button
+              v-for="option in careTypeOptions"
+              :key="option.value"
+              type="button"
+              class="care-type-btn"
+              :class="{ active: editForm.careType === option.value }"
+              @click="editForm.careType = option.value"
+            >{{ option.label }}</button>
+          </div>
+          <input v-model="editForm.caredAt" type="datetime-local" />
+          <input v-model="editForm.memo" type="text" placeholder="メモ" />
+          <div class="edit-photo-row">
+            <template v-if="log.photoUrl">
+              <img :src="log.photoUrl" alt="ケア記録の写真" class="care-photo" />
+              <button type="button" class="delete-photo-btn" @click="handleDeletePhoto(log)">🗑 写真を削除</button>
+            </template>
+            <template v-else>
+              <button type="button" @click="editCameraInput.click()">📷 撮影</button>
+              <button type="button" @click="editGalleryInput.click()">🖼 ギャラリーから選択</button>
+            </template>
+          </div>
+          <div class="edit-actions">
+            <button @click="saveEdit(log)">保存</button>
+            <button type="button" class="cancel-btn" @click="cancelEdit">キャンセル</button>
+          </div>
+        </div>
+        <template v-else>
+          <img v-if="log.photoUrl" :src="log.photoUrl" alt="ケア記録の写真" class="care-photo" />
+          <span class="care-type">{{ careTypeLabel(log.careType) }}</span>
+          <span class="care-date">{{ log.caredAt }}</span>
+          <span v-if="log.memo" class="care-memo">{{ log.memo }}</span>
+          <button class="edit-btn" @click="startEdit(log)">編集</button>
+          <button @click="handleDeleteCareLog(log.id)" class="delete-btn">削除</button>
+        </template>
       </div>
     </div>
   </div>
@@ -56,7 +91,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getPlants } from '@/api/plants'
-import { getCareLogs, createCareLog, deleteCareLog, uploadCareLogPhoto } from '@/api/careLogs'
+import { getCareLogs, createCareLog, updateCareLog, deleteCareLog, uploadCareLogPhoto, deleteCareLogPhoto } from '@/api/careLogs'
 import CareCalendar from '@/components/CareCalendar.vue'
 
 const route = useRoute()
@@ -72,6 +107,10 @@ const cameraInput = ref(null)
 const galleryInput = ref(null)
 const selectedPhoto = ref(null)
 const selectedDate = ref(null)
+const editingId = ref(null)
+const editForm = ref({ careType: '', caredAt: '', memo: '' })
+const editCameraInput = ref(null)
+const editGalleryInput = ref(null)
 
 // caredAt（"2026-06-11T09:30:00"形式）から日付部分だけ取り出す
 const toDateStr = (caredAt) => caredAt ? caredAt.split('T')[0] : null
@@ -141,21 +180,61 @@ async function handlePhotoSelect(event) {
   selectedPhoto.value = file ? await compressImage(file) : null
 }
 
+// ローカル時刻のまま "YYYY-MM-DDTHH:mm" を作る（toISOStringはUTC変換され日付がずれるため使わない）
+function nowLocalDateTime() {
+  const now = new Date()
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`
+}
+
 async function handleCreateCareLog() {
-  if (!newCareLog.value.careType || !selectedDate.value) return
-  // 登録日はカレンダーで選択中の日付を使い、時刻だけ現在時刻を使う
-  const nowTime = new Date().toTimeString().slice(0, 5)
-  const payload = { ...newCareLog.value, caredAt: `${selectedDate.value}T${nowTime}` }
+  if (!newCareLog.value.careType) return
+  // 新規登録は常に現在日時を使う（手動で日付を指定することはできない）
+  const caredAt = nowLocalDateTime()
+  const payload = { ...newCareLog.value, caredAt }
   const created = await createCareLog(route.params.id, payload)
   if (selectedPhoto.value) {
     await uploadCareLogPhoto(route.params.id, created.data.id, selectedPhoto.value)
   }
   const res = await getCareLogs(route.params.id)
   careLogs.value = res.data
+  selectedDate.value = toDateStr(caredAt)
   newCareLog.value = { careType: '', memo: '' }
   selectedPhoto.value = null
   if (cameraInput.value) cameraInput.value.value = ''
   if (galleryInput.value) galleryInput.value.value = ''
+}
+
+function startEdit(log) {
+  editingId.value = log.id
+  editForm.value = { careType: log.careType, caredAt: log.caredAt.slice(0, 16), memo: log.memo || '' }
+}
+
+function cancelEdit() {
+  editingId.value = null
+}
+
+async function saveEdit(log) {
+  await updateCareLog(route.params.id, log.id, editForm.value)
+  const res = await getCareLogs(route.params.id)
+  careLogs.value = res.data
+  editingId.value = null
+}
+
+async function handleEditPhotoSelect(event) {
+  const file = event.target.files[0]
+  if (!file || !editingId.value) return
+  const compressed = await compressImage(file)
+  await uploadCareLogPhoto(route.params.id, editingId.value, compressed)
+  const res = await getCareLogs(route.params.id)
+  careLogs.value = res.data
+  event.target.value = ''
+}
+
+async function handleDeletePhoto(log) {
+  await deleteCareLogPhoto(route.params.id, log.id)
+  const res = await getCareLogs(route.params.id)
+  careLogs.value = res.data
 }
 
 async function handleDeleteCareLog(id) {
@@ -187,4 +266,11 @@ button:disabled { background: #ccc; cursor: not-allowed; }
 .care-date { color: #999; }
 .care-memo { color: #666; flex: 1; }
 .delete-btn { background: #e74c3c; padding: 0.4rem 0.8rem; margin-left: auto; }
+.edit-btn { background: #4a7a9d; padding: 0.4rem 0.8rem; margin-left: auto; }
+.edit-care-form { display: flex; flex-direction: column; gap: 0.5rem; width: 100%; }
+.edit-actions { display: flex; gap: 0.5rem; }
+.cancel-btn { background: #999; }
+.edit-photo-row { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+.edit-photo-row button { background: #4a7a9d; padding: 0.6rem 1rem; font-size: 0.9rem; }
+.delete-photo-btn { background: #e74c3c !important; }
 </style>

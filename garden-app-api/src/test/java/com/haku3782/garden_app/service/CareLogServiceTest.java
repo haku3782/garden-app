@@ -144,6 +144,80 @@ class CareLogServiceTest {
     }
 
     @Test
+    void update_throwsWhenCareLogNotFound() {
+        UUID plantId = UUID.randomUUID();
+        UUID id = UUID.randomUUID();
+        when(careLogRepository.findById(id)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> careLogService.update(plantId, id, new CareLogRequest()))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("見つかりません");
+    }
+
+    @Test
+    void update_throwsWhenPlantIdDoesNotMatch() {
+        UUID plantId = UUID.randomUUID();
+        UUID otherPlantId = UUID.randomUUID();
+        UUID id = UUID.randomUUID();
+
+        Plant plant = plantOwnedBy("taro", otherPlantId);
+        CareLog careLog = new CareLog();
+        careLog.setId(id);
+        careLog.setPlant(plant);
+
+        when(careLogRepository.findById(id)).thenReturn(Optional.of(careLog));
+
+        assertThatThrownBy(() -> careLogService.update(plantId, id, new CareLogRequest()))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("紐づくケアログ");
+    }
+
+    @Test
+    void update_throwsAccessDeniedWhenNotOwner() {
+        UUID plantId = UUID.randomUUID();
+        UUID id = UUID.randomUUID();
+
+        Plant ownedByOther = plantOwnedBy("hanako", plantId);
+        CareLog careLog = new CareLog();
+        careLog.setId(id);
+        careLog.setPlant(ownedByOther);
+
+        when(careLogRepository.findById(id)).thenReturn(Optional.of(careLog));
+
+        assertThatThrownBy(() -> careLogService.update(plantId, id, new CareLogRequest()))
+                .isInstanceOf(AccessDeniedException.class);
+
+        Mockito.verify(careLogRepository, Mockito.never()).save(any(CareLog.class));
+    }
+
+    @Test
+    void update_appliesNewValuesWhenOwner() {
+        UUID plantId = UUID.randomUUID();
+        UUID id = UUID.randomUUID();
+
+        Plant plant = plantOwnedBy("taro", plantId);
+        CareLog careLog = new CareLog();
+        careLog.setId(id);
+        careLog.setPlant(plant);
+        careLog.setCareType("水やり");
+        careLog.setCaredAt(LocalDateTime.of(2026, 6, 10, 8, 0));
+
+        when(careLogRepository.findById(id)).thenReturn(Optional.of(careLog));
+        when(careLogRepository.save(any(CareLog.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        CareLogRequest request = new CareLogRequest();
+        request.setCareType("施肥");
+        request.setCaredAt(LocalDateTime.of(2026, 6, 11, 9, 30));
+        request.setMemo("修正後のメモ");
+
+        CareLogResponse response = careLogService.update(plantId, id, request);
+
+        assertThat(response.getCareType()).isEqualTo("施肥");
+        assertThat(response.getCaredAt()).isEqualTo(LocalDateTime.of(2026, 6, 11, 9, 30));
+        assertThat(response.getMemo()).isEqualTo("修正後のメモ");
+    }
+
+    @Test
     void delete_throwsWhenCareLogNotFound() {
         UUID plantId = UUID.randomUUID();
         UUID id = UUID.randomUUID();
@@ -283,6 +357,62 @@ class CareLogServiceTest {
 
         assertThatThrownBy(() -> careLogService.uploadPhoto(plantId, id, photo))
                 .isInstanceOf(AccessDeniedException.class);
+    }
+
+    @Test
+    void deletePhoto_removesPhotoUrlAndCallsStorage() {
+        UUID plantId = UUID.randomUUID();
+        UUID id = UUID.randomUUID();
+
+        Plant plant = plantOwnedBy("taro", plantId);
+        CareLog careLog = new CareLog();
+        careLog.setId(id);
+        careLog.setPlant(plant);
+        careLog.setPhotoUrl("https://example.supabase.co/storage/v1/object/public/care-log-photos/abc.jpg");
+
+        when(careLogRepository.findById(id)).thenReturn(Optional.of(careLog));
+        when(careLogRepository.save(any(CareLog.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        CareLogResponse response = careLogService.deletePhoto(plantId, id);
+
+        assertThat(response.getPhotoUrl()).isNull();
+        Mockito.verify(supabaseStorageService).delete("https://example.supabase.co/storage/v1/object/public/care-log-photos/abc.jpg");
+    }
+
+    @Test
+    void deletePhoto_doesNothingWhenNoPhoto() {
+        UUID plantId = UUID.randomUUID();
+        UUID id = UUID.randomUUID();
+
+        Plant plant = plantOwnedBy("taro", plantId);
+        CareLog careLog = new CareLog();
+        careLog.setId(id);
+        careLog.setPlant(plant);
+
+        when(careLogRepository.findById(id)).thenReturn(Optional.of(careLog));
+        when(careLogRepository.save(any(CareLog.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        careLogService.deletePhoto(plantId, id);
+
+        Mockito.verify(supabaseStorageService, Mockito.never()).delete(any());
+    }
+
+    @Test
+    void deletePhoto_throwsAccessDeniedWhenNotOwner() {
+        UUID plantId = UUID.randomUUID();
+        UUID id = UUID.randomUUID();
+
+        Plant ownedByOther = plantOwnedBy("hanako", plantId);
+        CareLog careLog = new CareLog();
+        careLog.setId(id);
+        careLog.setPlant(ownedByOther);
+
+        when(careLogRepository.findById(id)).thenReturn(Optional.of(careLog));
+
+        assertThatThrownBy(() -> careLogService.deletePhoto(plantId, id))
+                .isInstanceOf(AccessDeniedException.class);
+
+        Mockito.verify(supabaseStorageService, Mockito.never()).delete(any());
     }
 
     @Test

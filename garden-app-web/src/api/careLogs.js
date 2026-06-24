@@ -6,6 +6,9 @@ export const getCareLogs = (plantId) =>
 export const createCareLog = (plantId, data) =>
   api.post(`/api/plants/${plantId}/care-logs`, data)
 
+export const updateCareLog = (plantId, id, data) =>
+  api.put(`/api/plants/${plantId}/care-logs/${id}`, data)
+
 export const deleteCareLog = (plantId, id) =>
   api.delete(`/api/plants/${plantId}/care-logs/${id}`)
 
@@ -16,3 +19,6 @@ export const uploadCareLogPhoto = (plantId, id, file) => {
     headers: { 'Content-Type': 'multipart/form-data' }
   })
 }
+
+export const deleteCareLogPhoto = (plantId, id) =>
+  api.delete(`/api/plants/${plantId}/care-logs/${id}/photo`)
