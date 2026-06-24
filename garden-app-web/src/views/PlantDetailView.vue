@@ -92,8 +92,32 @@ onMounted(async () => {
   careLogs.value = logsRes.data
 })
 
-function handlePhotoSelect(event) {
-  selectedPhoto.value = event.target.files[0] || null
+const PHOTO_MAX_SIZE = 1600
+const PHOTO_QUALITY = 0.8
+
+// スマホのカメラ画像は数MB～十数MBになることがあり、そのまま処理すると
+// 低スペック端末でブラウザがメモリ不足になることがあるため、
+// 縮小・再エンコードしてから保持する
+async function compressImage(file) {
+  const bitmap = await createImageBitmap(file)
+  let { width, height } = bitmap
+  if (width > PHOTO_MAX_SIZE || height > PHOTO_MAX_SIZE) {
+    const ratio = Math.min(PHOTO_MAX_SIZE / width, PHOTO_MAX_SIZE / height)
+    width = Math.round(width * ratio)
+    height = Math.round(height * ratio)
+  }
+  const canvas = document.createElement('canvas')
+  canvas.width = width
+  canvas.height = height
+  canvas.getContext('2d').drawImage(bitmap, 0, 0, width, height)
+  bitmap.close()
+  const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', PHOTO_QUALITY))
+  return new File([blob], file.name.replace(/\.\w+$/, '.jpg'), { type: 'image/jpeg' })
+}
+
+async function handlePhotoSelect(event) {
+  const file = event.target.files[0]
+  selectedPhoto.value = file ? await compressImage(file) : null
 }
 
 async function handleCreateCareLog() {
