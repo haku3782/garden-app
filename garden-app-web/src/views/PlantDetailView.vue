@@ -17,6 +17,9 @@
           <option value="herb">{{ t('typeHerb') }}</option>
           <option value="flower">{{ t('typeFlower') }}</option>
           <option value="tree">{{ t('typeTree') }}</option>
+          <option value="houseplant">{{ t('typeHouseplant') }}</option>
+          <option value="succulent">{{ t('typeSucculent') }}</option>
+          <option value="airplant">{{ t('typeAirPlant') }}</option>
           <option value="other">{{ t('other') }}</option>
         </select>
         <input v-model="plantEditForm.memo" type="text" :placeholder="t('commentPlaceholder')" />
@@ -110,6 +113,16 @@
         </div>
       </div>
     </template>
+
+    <ConfirmModal
+      v-if="showDeletePlantConfirm"
+      variant="danger"
+      :message="t('deletePlantConfirm')"
+      :confirm-label="t('deleteBtn')"
+      :cancel-label="t('cancelBtn')"
+      @confirm="confirmDeletePlant"
+      @cancel="showDeletePlantConfirm = false"
+    />
   </div>
 </template>
 
@@ -120,6 +133,7 @@ import { getPlants, updatePlant, deletePlant } from '@/api/plants'
 import { getCareLogs, updateCareLog, deleteCareLog, uploadCareLogPhoto, deleteCareLogPhoto } from '@/api/careLogs'
 import CareCalendar from '@/components/CareCalendar.vue'
 import PlantPlaceholderIcon from '@/components/PlantPlaceholderIcon.vue'
+import ConfirmModal from '@/components/ConfirmModal.vue'
 import { useLanguage } from '@/composables/useLanguage'
 
 const route = useRoute()
@@ -137,6 +151,7 @@ const editGalleryInput = ref(null)
 const activePhotoTargetId = ref(null)
 const editingPlant = ref(false)
 const plantEditForm = ref({ name: '', type: '', memo: '' })
+const showDeletePlantConfirm = ref(false)
 
 // caredAt（"2026-06-11T09:30:00"形式）から日付部分だけ取り出す
 const toDateStr = (caredAt) => caredAt ? caredAt.split('T')[0] : null
@@ -160,8 +175,12 @@ function selectLatestDate() {
   selectedDate.value = dates.length ? dates.sort().at(-1) : null
 }
 
-async function handleDeletePlant() {
-  if (!confirm(t('deletePlantConfirm'))) return
+function handleDeletePlant() {
+  showDeletePlantConfirm.value = true
+}
+
+async function confirmDeletePlant() {
+  showDeletePlantConfirm.value = false
   await deletePlant(route.params.id)
   router.push('/plants')
 }
@@ -183,7 +202,10 @@ async function savePlantEdit() {
   editingPlant.value = false
 }
 
-const typeKeyMap = { vegetable: 'typeVegetable', fruit: 'typeFruit', herb: 'typeHerb', flower: 'typeFlower', tree: 'typeTree', other: 'other' }
+const typeKeyMap = {
+  vegetable: 'typeVegetable', fruit: 'typeFruit', herb: 'typeHerb', flower: 'typeFlower', tree: 'typeTree',
+  houseplant: 'typeHouseplant', succulent: 'typeSucculent', airplant: 'typeAirPlant', other: 'other'
+}
 const typeLabel = (type) => t(typeKeyMap[type] || 'other')
 
 const careTypeKeyMap = { water: 'careWater', fertilize: 'careFertilize', harvest: 'careHarvest', other: 'other' }

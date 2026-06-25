@@ -51,7 +51,7 @@ public class Plant {
     private String name;
 
     /**
-     * 植物の種別（vegetable / fruit / herb / flower / tree / other）。
+     * 植物の種別（vegetable / fruit / herb / flower / tree / houseplant / succulent / airplant / other）。
      *
      * <p>@Enumerated(EnumType.STRING) : DB に数値ではなく文字列で保存する。
      * @JdbcTypeCode(SqlTypes.NAMED_ENUM) : PostgreSQL のネイティブ ENUM 型（plant_type）に

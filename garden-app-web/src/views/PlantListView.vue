@@ -40,6 +40,15 @@
         </div>
       </div>
     </div>
+
+    <ConfirmModal
+      v-if="showLogoutConfirm"
+      :message="t('logoutConfirm')"
+      :confirm-label="t('logoutTitle')"
+      :cancel-label="t('cancelBtn')"
+      @confirm="confirmLogout"
+      @cancel="showLogoutConfirm = false"
+    />
   </div>
 </template>
 
@@ -51,6 +60,7 @@ import { useLanguage } from '@/composables/useLanguage'
 import { getPlants } from '@/api/plants'
 import PlantPlaceholderIcon from '@/components/PlantPlaceholderIcon.vue'
 import LanguageSelector from '@/components/LanguageSelector.vue'
+import ConfirmModal from '@/components/ConfirmModal.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -58,6 +68,7 @@ const { t } = useLanguage()
 
 const plants = ref([])
 const isLoading = ref(true)
+const showLogoutConfirm = ref(false)
 
 const selectedType = ref('all')
 
@@ -68,6 +79,9 @@ const typeFilterOptions = [
   { value: 'herb', labelKey: 'typeHerb' },
   { value: 'flower', labelKey: 'typeFlower' },
   { value: 'tree', labelKey: 'typeTree' },
+  { value: 'houseplant', labelKey: 'typeHouseplant' },
+  { value: 'succulent', labelKey: 'typeSucculent' },
+  { value: 'airplant', labelKey: 'typeAirPlant' },
   { value: 'other', labelKey: 'other' }
 ]
 
@@ -88,7 +102,11 @@ function goToDetail(id) {
 }
 
 function handleLogout() {
-  if (!confirm(t('logoutConfirm'))) return
+  showLogoutConfirm.value = true
+}
+
+function confirmLogout() {
+  showLogoutConfirm.value = false
   authStore.logout()
   router.push('/login')
 }

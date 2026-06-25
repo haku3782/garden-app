@@ -1,15 +1,17 @@
 <template>
-  <LanguageSelector class="lang-corner" />
-  <div class="auth-container">
-    <h1 class="site-title">{{ t('appTitle') }}</h1>
-    <h2>{{ t('loginTitle') }}</h2>
-    <form @submit.prevent="handleLogin">
-      <input v-model="username" type="text" :placeholder="t('usernamePlaceholder')" required />
-      <input v-model="password" type="password" :placeholder="t('passwordPlaceholder')" required />
-      <button type="submit">{{ t('loginBtn') }}</button>
-    </form>
-    <p class="auth-switch">{{ t('noAccountText') }}<router-link to="/register">{{ t('registerLink') }}</router-link></p>
-    <p v-if="error" class="error">{{ error }}</p>
+  <div class="page">
+    <LanguageSelector class="lang-corner" />
+    <div class="auth-container">
+      <h1 class="site-title">{{ t('appTitle') }}</h1>
+      <h2>{{ t('loginTitle') }}</h2>
+      <form @submit.prevent="handleLogin">
+        <input v-model="username" type="text" :placeholder="t('usernamePlaceholder')" required />
+        <input v-model="password" type="password" :placeholder="t('passwordPlaceholder')" required />
+        <button type="submit">{{ t('loginBtn') }}</button>
+      </form>
+      <p class="auth-switch">{{ t('noAccountText') }}<router-link to="/register">{{ t('registerLink') }}</router-link></p>
+      <p v-if="error" class="error">{{ error }}</p>
+    </div>
   </div>
 </template>
 
@@ -41,7 +43,7 @@ async function handleLogin() {
 </script>
 
 <style scoped>
-.auth-container {
+.page {
   --color-primary: #4a9d5f;
   --color-primary-dark: #3d8350;
   --color-muted: #767676;
@@ -51,6 +53,10 @@ async function handleLogin() {
 
   max-width: 400px;
   margin: 100px auto;
+  position: relative;
+}
+
+.auth-container {
   padding: 2rem;
   display: flex;
   flex-direction: column;
@@ -97,9 +103,10 @@ button:hover { background: var(--color-primary-dark); }
 
 .error { margin: 0; color: var(--color-danger); text-align: center; font-size: 0.9rem; }
 
-.lang-corner { position: fixed; top: 0.75rem; right: 0.75rem; z-index: 100; }
+.lang-corner { position: absolute; top: -2.5rem; right: 0.5rem; }
 
 @media (max-width: 600px) {
-  .auth-container { margin: 40px auto; padding: 1.5rem; }
+  .page { margin: 40px auto; }
+  .auth-container { padding: 1.5rem; }
 }
 </style>

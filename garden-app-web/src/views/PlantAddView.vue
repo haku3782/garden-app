@@ -49,6 +49,9 @@ const typeOptions = [
   { value: 'herb', labelKey: 'typeHerb' },
   { value: 'flower', labelKey: 'typeFlower' },
   { value: 'tree', labelKey: 'typeTree' },
+  { value: 'houseplant', labelKey: 'typeHouseplant' },
+  { value: 'succulent', labelKey: 'typeSucculent' },
+  { value: 'airplant', labelKey: 'typeAirPlant' },
   { value: 'other', labelKey: 'other' }
 ]
 

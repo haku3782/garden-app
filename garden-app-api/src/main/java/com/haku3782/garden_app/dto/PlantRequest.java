@@ -17,7 +17,7 @@ public class PlantRequest {
     /** 植物の名前 */
     private String name;
 
-    /** 植物の種別（vegetable / fruit / herb / flower / tree / other） */
+    /** 植物の種別（vegetable / fruit / herb / flower / tree / houseplant / succulent / airplant / other） */
     private PlantType type;
 
     /** 植えた日時（任意）。例: "2026-06-11T09:00:00" */
