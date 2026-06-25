@@ -3,6 +3,7 @@
     <header>
       <h1>{{ t('appTitle') }}</h1>
       <div class="header-actions">
+        <LanguageSelector />
         <button @click="router.push('/gallery')" class="ghost-btn icon-btn" :title="t('galleryTitle')">▭</button>
         <button @click="handleLogout" class="ghost-btn icon-btn" :title="t('logoutTitle')">⏻</button>
       </div>
@@ -49,6 +50,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useLanguage } from '@/composables/useLanguage'
 import { getPlants } from '@/api/plants'
 import PlantPlaceholderIcon from '@/components/PlantPlaceholderIcon.vue'
+import LanguageSelector from '@/components/LanguageSelector.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()

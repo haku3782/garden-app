@@ -1,4 +1,5 @@
 <template>
+  <LanguageSelector class="lang-corner" />
   <div class="auth-container">
     <h1 class="site-title">{{ t('appTitle') }}</h1>
     <h2>{{ t('registerTitle') }}</h2>
@@ -17,6 +18,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useLanguage } from '@/composables/useLanguage'
+import LanguageSelector from '@/components/LanguageSelector.vue'
 import { register } from '@/api/auth'
 
 const router = useRouter()
@@ -94,6 +96,8 @@ button:hover { background: var(--color-primary-dark); }
 .auth-switch a:hover { text-decoration: underline; }
 
 .error { margin: 0; color: var(--color-danger); text-align: center; font-size: 0.9rem; }
+
+.lang-corner { position: fixed; top: 0.75rem; right: 0.75rem; z-index: 100; }
 
 @media (max-width: 600px) {
   .auth-container { margin: 40px auto; padding: 1.5rem; }

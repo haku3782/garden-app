@@ -30,7 +30,8 @@ function t(key) {
 const langList = LANG_CODES.map(code => ({
   code,
   name: translations[code].langName,
-  flag: translations[code].flag
+  flag: translations[code].flag,
+  short: translations[code].short
 }))
 
 export function useLanguage() {
