@@ -1,7 +1,7 @@
 <template>
   <div class="container">
     <header>
-      <h1>🌱 植物管理</h1>
+      <h1>My植物管理</h1>
       <div class="header-actions">
         <button @click="router.push('/gallery')" class="ghost-btn icon-btn" title="ギャラリー">▭</button>
         <button @click="handleLogout" class="ghost-btn icon-btn" title="ログアウト">⏻</button>
