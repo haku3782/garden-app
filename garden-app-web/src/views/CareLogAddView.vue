@@ -1,29 +1,36 @@
 <template>
   <div class="container">
-    <button @click="router.back()" class="back-btn">← 戻る</button>
+    <div class="top-bar">
+      <button @click="router.back()" class="back-btn">← 戻る</button>
+      <button @click="router.push('/plants')" class="back-btn">TOPへ</button>
+    </div>
     <h1>ケア記録を追加</h1>
 
     <div class="add-care-form">
+      <div class="photo-select-row">
+        <input ref="cameraInput" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" @change="handlePhotoSelect" class="hidden-file-input" />
+        <input ref="galleryInput" type="file" accept="image/jpeg,image/png,image/webp" @change="handlePhotoSelect" class="hidden-file-input" />
+        <button type="button" @click="cameraInput.click()">📷 撮影</button>
+        <button type="button" @click="galleryInput.click()">🏞️ 選択</button>
+        <span v-if="selectedPhoto" class="selected-photo-name">{{ selectedPhoto.name }}</span>
+      </div>
       <div class="care-type-select">
         <button
           v-for="option in careTypeOptions"
           :key="option.value"
           type="button"
           class="care-type-btn"
-          :class="{ active: newCareLog.careType === option.value }"
-          @click="newCareLog.careType = option.value"
+          :class="{ active: selectedTypes.includes(option.value) }"
+          :style="selectedTypes.includes(option.value) ? { background: careTypeColor(option.value), borderColor: careTypeColor(option.value) } : {}"
+          @click="toggleType(option.value)"
         >{{ option.label }}</button>
       </div>
-      <p class="care-date-display">登録日時：現在時刻で自動登録されます</p>
-      <input v-model="newCareLog.memo" type="text" placeholder="メモ" />
-      <div class="photo-select-row">
-        <input ref="cameraInput" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" @change="handlePhotoSelect" class="hidden-file-input" />
-        <input ref="galleryInput" type="file" accept="image/jpeg,image/png,image/webp" @change="handlePhotoSelect" class="hidden-file-input" />
-        <button type="button" @click="cameraInput.click()">📷 撮影</button>
-        <button type="button" @click="galleryInput.click()">🏞️ ギャラリーから選択</button>
-        <span v-if="selectedPhoto" class="selected-photo-name">{{ selectedPhoto.name }}</span>
+      <input v-model="newCareLog.caredAt" type="datetime-local" />
+      <input v-model="newCareLog.memo" type="text" placeholder="コメント" />
+      <div class="add-care-actions">
+        <button @click="handleCreateCareLog">保存</button>
+        <button type="button" class="cancel-btn" @click="router.back()">キャンセル</button>
       </div>
-      <button :disabled="!newCareLog.careType" @click="handleCreateCareLog">記録追加</button>
     </div>
   </div>
 </template>
@@ -37,19 +44,34 @@ const route = useRoute()
 const router = useRouter()
 
 const newCareLog = ref({
-  careType: '',
-  memo: ''
+  memo: '',
+  caredAt: nowLocalDateTime()
 })
+const selectedTypes = ref([])
 const cameraInput = ref(null)
 const galleryInput = ref(null)
 const selectedPhoto = ref(null)
 
 const careTypeOptions = [
-  { value: 'water', label: '💧水やり' },
-  { value: 'fertilize', label: '🌿肥料' },
-  { value: 'harvest', label: '🌾収穫' },
+  { value: 'water', label: '水やり' },
+  { value: 'fertilize', label: '肥料' },
+  { value: 'harvest', label: '収穫' },
   { value: 'other', label: 'その他' }
 ]
+
+// calendar・履歴一覧と同じ配色
+const careTypeColor = (type) => ({
+  water: '#4a90d9', fertilize: '#4a9d5f', harvest: '#d9a92a', other: '#9b9b9b'
+}[type] || '#9b9b9b')
+
+function toggleType(value) {
+  const index = selectedTypes.value.indexOf(value)
+  if (index === -1) {
+    selectedTypes.value.push(value)
+  } else {
+    selectedTypes.value.splice(index, 1)
+  }
+}
 
 const PHOTO_MAX_SIZE = 1600
 const PHOTO_QUALITY = 0.8
@@ -87,15 +109,12 @@ function nowLocalDateTime() {
 }
 
 async function handleCreateCareLog() {
-  if (!newCareLog.value.careType) return
-  // 新規登録は常に現在日時を使う（手動で日付を指定することはできない）
-  const caredAt = nowLocalDateTime()
-  const payload = { ...newCareLog.value, caredAt }
+  const payload = { ...newCareLog.value, careType: selectedTypes.value.join(',') }
   const created = await createCareLog(route.params.id, payload)
   if (selectedPhoto.value) {
     await uploadCareLogPhoto(route.params.id, created.data.id, selectedPhoto.value)
   }
-  router.push(`/plants/${route.params.id}`)
+  router.back()
 }
 </script>
 
@@ -103,7 +122,6 @@ async function handleCreateCareLog() {
 .container {
   --color-primary: #4a9d5f;
   --color-primary-dark: #3d8350;
-  --color-accent: #4a7a9d;
   --color-muted: #767676;
   --color-border: #e3e3e3;
   --color-bg-soft: #f7f8f7;
@@ -115,6 +133,7 @@ async function handleCreateCareLog() {
   color: #2d3436;
 }
 
+.top-bar { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
 .back-btn {
   background: transparent;
   color: var(--color-muted);
@@ -123,32 +142,32 @@ async function handleCreateCareLog() {
   font-size: 0.85rem;
   border-radius: var(--radius);
   cursor: pointer;
-  margin-bottom: 1.5rem;
 }
 .back-btn:hover { background: var(--color-bg-soft); color: #2d3436; }
 
 h1 { font-size: 1.3rem; margin-bottom: 1.25rem; }
 
-.add-care-form { display: flex; flex-direction: column; gap: 0.75rem; padding: 1.25rem; background: var(--color-bg-soft); border-radius: var(--radius); }
+.add-care-form { display: flex; flex-direction: column; gap: 0.5rem; padding: 1.25rem; background: var(--color-bg-soft); border-radius: var(--radius); }
 
 .care-type-select { display: flex; gap: 0.5rem; flex-wrap: wrap; }
 .care-type-btn {
   background: #fff;
   color: #2d3436;
   border: 1px solid var(--color-border);
-  padding: 0.45rem 0.9rem;
-  font-size: 0.85rem;
+  padding: 0.2rem 0.7rem;
+  font-size: 0.8rem;
   border-radius: 999px;
 }
-.care-type-btn.active { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
+.care-type-btn:hover { background: #fff; color: #2d3436; }
+.care-type-btn.active { color: #fff; }
+.care-type-btn.active:hover { filter: brightness(0.9); }
 
-.care-date-display { margin: 0; color: var(--color-muted); font-size: 0.95rem; }
 
 input {
-  padding: 0.7rem;
+  padding: 0.45rem 0.8rem;
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
-  font-size: 1rem;
+  font-size: 0.85rem;
   background: #fff;
   transition: border-color 0.15s, box-shadow 0.15s;
 }
@@ -160,8 +179,14 @@ input:focus {
 
 .photo-select-row { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
 .hidden-file-input { display: none; }
-.photo-select-row button { background: var(--color-accent); padding: 0.6rem 1rem; font-size: 0.9rem; }
-.photo-select-row button:hover { background: #3d6584; }
+.photo-select-row button {
+  background: transparent;
+  color: var(--color-muted);
+  border: 1px solid var(--color-border);
+  padding: 0.45rem 0.8rem;
+  font-size: 0.85rem;
+}
+.photo-select-row button:hover { background: var(--color-bg-soft); color: #2d3436; }
 .selected-photo-name { color: var(--color-muted); font-size: 0.85rem; }
 
 button {
@@ -177,6 +202,15 @@ button {
 button:hover { background: var(--color-primary-dark); }
 button:active { transform: scale(0.97); }
 button:disabled { background: var(--color-border); color: var(--color-muted); cursor: not-allowed; }
+
+.add-care-actions { display: flex; justify-content: flex-end; gap: 0.5rem; }
+.add-care-actions button { padding: 0.45rem 0.8rem; font-size: 0.85rem; }
+.cancel-btn {
+  background: transparent;
+  color: var(--color-muted);
+  border: 1px solid var(--color-border);
+}
+.cancel-btn:hover { background: var(--color-bg-soft); color: #2d3436; }
 
 @media (min-width: 768px) {
   .container { max-width: 600px; padding: 2rem; }

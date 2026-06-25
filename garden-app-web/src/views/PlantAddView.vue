@@ -1,28 +1,28 @@
 <template>
   <div class="container">
-    <button @click="router.back()" class="back-btn">← 戻る</button>
+    <div class="top-bar">
+      <button @click="router.back()" class="back-btn">← 戻る</button>
+    </div>
     <h1>植物を追加</h1>
 
     <div class="add-form">
-      <input v-model="newPlant.name" type="text" placeholder="植物名" />
-      <select v-model="newPlant.type">
-        <option value="">種類を選択</option>
-        <option value="vegetable">野菜</option>
-        <option value="fruit">果物</option>
-        <option value="herb">ハーブ</option>
-        <option value="flower">花</option>
-        <option value="tree">樹木</option>
-        <option value="other">その他</option>
-      </select>
-      <input v-model="newPlant.memo" type="text" placeholder="メモ" />
-      <div class="photo-select-row">
-        <input ref="cameraInput" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" @change="handlePhotoSelect" class="hidden-file-input" />
-        <input ref="galleryInput" type="file" accept="image/jpeg,image/png,image/webp" @change="handlePhotoSelect" class="hidden-file-input" />
-        <button type="button" class="photo-btn" @click="cameraInput.click()">📷 撮影</button>
-        <button type="button" class="photo-btn" @click="galleryInput.click()">🏞️ アルバムから選択</button>
-        <span v-if="selectedPhoto" class="selected-photo-name">{{ selectedPhoto.name }}</span>
+      <div class="type-tabs">
+        <button
+          v-for="option in typeOptions"
+          :key="option.value"
+          type="button"
+          class="type-tab"
+          :class="{ active: newPlant.type === option.value }"
+          @click="newPlant.type = option.value"
+        >{{ option.label }}</button>
       </div>
-      <button @click="handleCreate">追加</button>
+      <input v-model="newPlant.name" type="text" placeholder="名前" />
+      <input v-model="newPlant.memo" type="text" placeholder="コメント" />
+      <div class="add-actions">
+        <button @click="handleCreate">保存</button>
+        <button type="button" class="cancel-btn" @click="router.back()">キャンセル</button>
+      </div>
+      <p v-if="error" class="error">{{ error }}</p>
     </div>
   </div>
 </template>
@@ -31,7 +31,6 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { createPlant } from '@/api/plants'
-import { createCareLog, uploadCareLogPhoto } from '@/api/careLogs'
 
 const router = useRouter()
 
@@ -40,38 +39,16 @@ const newPlant = ref({
   type: '',
   memo: ''
 })
+const error = ref('')
 
-const cameraInput = ref(null)
-const galleryInput = ref(null)
-const selectedPhoto = ref(null)
-
-const PHOTO_MAX_SIZE = 1600
-const PHOTO_QUALITY = 0.8
-
-// スマホのカメラ画像は数MB～十数MBになることがあり、そのまま処理すると
-// 低スペック端末でブラウザがメモリ不足になることがあるため、
-// 縮小・再エンコードしてから保持する
-async function compressImage(file) {
-  const bitmap = await createImageBitmap(file)
-  let { width, height } = bitmap
-  if (width > PHOTO_MAX_SIZE || height > PHOTO_MAX_SIZE) {
-    const ratio = Math.min(PHOTO_MAX_SIZE / width, PHOTO_MAX_SIZE / height)
-    width = Math.round(width * ratio)
-    height = Math.round(height * ratio)
-  }
-  const canvas = document.createElement('canvas')
-  canvas.width = width
-  canvas.height = height
-  canvas.getContext('2d').drawImage(bitmap, 0, 0, width, height)
-  bitmap.close()
-  const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', PHOTO_QUALITY))
-  return new File([blob], file.name.replace(/\.\w+$/, '.jpg'), { type: 'image/jpeg' })
-}
-
-async function handlePhotoSelect(event) {
-  const file = event.target.files[0]
-  selectedPhoto.value = file ? await compressImage(file) : null
-}
+const typeOptions = [
+  { value: 'vegetable', label: '野菜' },
+  { value: 'fruit', label: '果物' },
+  { value: 'herb', label: 'ハーブ' },
+  { value: 'flower', label: '花' },
+  { value: 'tree', label: '樹木' },
+  { value: 'other', label: 'その他' }
+]
 
 // ローカル時刻のまま "YYYY-MM-DDTHH:mm" を作る（toISOStringはUTC変換され日付がずれるため使わない）
 function nowLocalDateTime() {
@@ -81,16 +58,15 @@ function nowLocalDateTime() {
 }
 
 async function handleCreate() {
-  if (!newPlant.value.name || !newPlant.value.type) return
+  if (!newPlant.value.name || !newPlant.value.type) {
+    error.value = '種類と名前を入力してください'
+    return
+  }
+  error.value = ''
   // 植えた日は登録時点の日時を自動で使う
   const data = { ...newPlant.value, plantedAt: nowLocalDateTime() }
-  const created = await createPlant(data)
-  if (selectedPhoto.value) {
-    // 植物自体には写真フィールドが無いため、ケア記録（その他）を1件作成して写真を添付する
-    const careLog = await createCareLog(created.data.id, { careType: 'other', caredAt: nowLocalDateTime() })
-    await uploadCareLogPhoto(created.data.id, careLog.data.id, selectedPhoto.value)
-  }
-  router.push('/plants')
+  await createPlant(data)
+  router.back()
 }
 </script>
 
@@ -108,19 +84,17 @@ async function handleCreate() {
   color: #2d3436;
 }
 
+.top-bar { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
 .back-btn {
   background: transparent;
   color: #767676;
   border: 1px solid var(--color-border);
   padding: 0.45rem 0.8rem;
   font-size: 0.85rem;
-  border-radius: var(--radius);
-  cursor: pointer;
-  margin-bottom: 1.5rem;
 }
 .back-btn:hover { background: var(--color-bg-soft); color: #2d3436; }
 
-h1 { font-size: 1.3rem; margin-bottom: 1.25rem; }
+h1 { font-size: 1.05rem; margin-bottom: 1.25rem; }
 
 .add-form {
   display: flex;
@@ -131,38 +105,56 @@ h1 { font-size: 1.3rem; margin-bottom: 1.25rem; }
   border-radius: var(--radius);
 }
 
-input, select {
-  padding: 0.7rem;
+input {
+  padding: 0.45rem 0.8rem;
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
-  font-size: 1rem;
+  font-size: 0.85rem;
   background: #fff;
   transition: border-color 0.15s, box-shadow 0.15s;
 }
-input:focus, select:focus {
+input:focus {
   outline: none;
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(74, 157, 95, 0.15);
 }
 
+.type-tabs { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.type-tab {
+  background: #fff;
+  color: #2d3436;
+  border: 1px solid var(--color-border);
+  padding: 0.45rem 0.9rem;
+  font-size: 0.85rem;
+  border-radius: 999px;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+.type-tab:hover { background: #fff; color: #2d3436; }
+.type-tab.active { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
+.type-tab.active:hover { background: var(--color-primary-dark); color: #fff; }
+
 button {
-  padding: 0.65rem 1.1rem;
+  padding: 0.45rem 0.8rem;
   background: var(--color-primary);
   color: white;
   border: none;
   border-radius: var(--radius);
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   cursor: pointer;
   transition: background-color 0.15s, transform 0.05s;
 }
 button:hover { background: var(--color-primary-dark); }
 button:active { transform: scale(0.97); }
 
-.photo-select-row { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
-.hidden-file-input { display: none; }
-.photo-btn { background: #4a7a9d; padding: 0.6rem 1rem; font-size: 0.9rem; }
-.photo-btn:hover { background: #3d6584; }
-.selected-photo-name { color: #767676; font-size: 0.85rem; }
+.add-actions { display: flex; justify-content: flex-end; gap: 0.5rem; }
+.cancel-btn {
+  background: transparent;
+  color: #767676;
+  border: 1px solid var(--color-border);
+}
+.cancel-btn:hover { background: var(--color-bg-soft); color: #2d3436; }
+
+.error { margin: 0; color: #2d3436; font-size: 0.85rem; }
 
 @media (min-width: 768px) {
   .container { max-width: 600px; padding: 2rem; }

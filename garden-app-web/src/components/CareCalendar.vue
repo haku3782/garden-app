@@ -108,7 +108,7 @@ const careTypesByDate = computed(() => {
     const dateStr = log.caredAt ? log.caredAt.split('T')[0] : null
     if (!dateStr) return
     if (!map.has(dateStr)) map.set(dateStr, new Set())
-    map.get(dateStr).add(log.careType)
+    if (log.careType) log.careType.split(',').forEach(t => map.get(dateStr).add(t))
   })
   return map
 })

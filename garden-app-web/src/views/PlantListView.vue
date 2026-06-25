@@ -3,13 +3,16 @@
     <header>
       <h1>🌱 家庭菜園管理</h1>
       <div class="header-actions">
-        <button @click="router.push('/gallery')" class="ghost-btn">📷 ギャラリー</button>
-        <button @click="handleLogout" class="ghost-btn">ログアウト</button>
+        <button @click="router.push('/gallery')" class="ghost-btn icon-btn" title="ギャラリー">🖼️</button>
+        <button @click="handleLogout" class="ghost-btn icon-btn" title="ログアウト">🚪</button>
       </div>
     </header>
 
     <div class="plant-list">
-      <h2>登録済みの植物</h2>
+      <div class="list-heading-row">
+        <h2>植物一覧</h2>
+        <button @click="router.push('/plants/new')" class="add-plant-btn">＋ 植物を追加</button>
+      </div>
 
       <div class="type-tabs">
         <button
@@ -22,8 +25,9 @@
         >{{ option.label }}</button>
       </div>
 
-      <p v-if="filteredPlants.length === 0" class="empty-message">植物が登録されていません</p>
-      <div class="plant-grid">
+      <p v-if="isLoading" class="loading-message">読み込み中...</p>
+      <p v-else-if="filteredPlants.length === 0" class="empty-message">植物が登録されていません</p>
+      <div v-else class="plant-grid">
         <div v-for="plant in filteredPlants" :key="plant.id" class="plant-card">
           <div class="plant-info" @click="goToDetail(plant.id)">
             <img v-if="plant.latestPhotoUrl" :src="plant.latestPhotoUrl" alt="" class="plant-thumbnail" />
@@ -33,8 +37,6 @@
         </div>
       </div>
     </div>
-
-    <button @click="router.push('/plants/new')" class="add-plant-btn">＋ 植物を追加</button>
   </div>
 </template>
 
@@ -48,6 +50,7 @@ const router = useRouter()
 const authStore = useAuthStore()
 
 const plants = ref([])
+const isLoading = ref(true)
 
 const selectedType = ref('all')
 
@@ -68,7 +71,9 @@ const filteredPlants = computed(() => {
 
 onMounted(async () => {
   const res = await getPlants()
-  plants.value = res.data
+  // 登録日時（createdAt）の新しい順に並べる
+  plants.value = [...res.data].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+  isLoading.value = false
 })
 
 function goToDetail(id) {
@@ -76,6 +81,7 @@ function goToDetail(id) {
 }
 
 function handleLogout() {
+  if (!confirm('ログアウトしますか？')) return
   authStore.logout()
   router.push('/login')
 }
@@ -101,15 +107,17 @@ function handleLogout() {
 
 header {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
+  justify-content: space-between;
   gap: 0.75rem;
   margin-bottom: 1.5rem;
 }
 header h1 { font-size: 1.3rem; margin: 0; }
-.header-actions { display: flex; gap: 0.5rem; width: 100%; justify-content: flex-end; }
+.header-actions { display: flex; gap: 0.5rem; flex-shrink: 0; }
 
-h2 { font-size: 1.05rem; margin-bottom: 0.75rem; }
+h2 { font-size: 1.05rem; margin: 0; }
+
+.list-heading-row { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 0.75rem; }
 
 button {
   padding: 0.65rem 1.1rem;
@@ -133,6 +141,8 @@ button:active { transform: scale(0.97); }
 }
 .ghost-btn:hover { background: var(--color-bg-soft); color: #2d3436; }
 
+.icon-btn { padding: 0.45rem; width: 2.1rem; height: 2.1rem; display: flex; align-items: center; justify-content: center; font-size: 1rem; }
+
 .type-tabs { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
 .type-tab {
   background: #fff;
@@ -143,9 +153,12 @@ button:active { transform: scale(0.97); }
   border-radius: 999px;
   transition: background-color 0.15s, border-color 0.15s;
 }
+.type-tab:hover { background: #fff; color: #2d3436; }
 .type-tab.active { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
+.type-tab.active:hover { background: var(--color-primary-dark); color: #fff; }
 
 .empty-message { color: var(--color-muted); min-height: 160px; display: flex; align-items: center; }
+.loading-message { color: var(--color-muted); min-height: 160px; display: flex; align-items: center; }
 
 .plant-list { margin-bottom: 2rem; }
 
@@ -166,20 +179,17 @@ button:active { transform: scale(0.97); }
 .plant-info { display: flex; gap: 0.85rem; align-items: center; cursor: pointer; flex: 1; min-width: 0; }
 .plant-thumbnail { width: 64px; height: 64px; object-fit: cover; border-radius: var(--radius); flex-shrink: 0; }
 .plant-thumbnail-placeholder { background: var(--color-bg-soft); }
-.plant-name { font-weight: 500; }
+.plant-name { font-weight: 500; font-size: 0.9rem; }
 
-.add-plant-btn { width: 100%; }
+.add-plant-btn { padding: 0.45rem 0.8rem; font-size: 0.85rem; flex-shrink: 0; }
 
 @media (min-width: 600px) {
-  header { flex-direction: row; align-items: center; }
   header h1 { font-size: 1.5rem; }
-  .header-actions { width: auto; }
 }
 
 @media (min-width: 768px) {
   .container { max-width: 900px; padding: 2rem; }
   .plant-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
-  .add-plant-btn { width: auto; }
 }
 
 @media (min-width: 1024px) {
