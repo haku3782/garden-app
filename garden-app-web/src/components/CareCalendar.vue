@@ -1,13 +1,13 @@
 <template>
   <div class="calendar-container">
     <div class="calendar-header">
-      <button class="planted-btn" :disabled="!earliestDate" @click="goToFirstDate">初日</button>
+      <button class="planted-btn" :disabled="!earliestDate" @click="goToFirstDate">{{ t('firstDayBtn') }}</button>
       <div class="calendar-nav">
         <button class="nav-btn" @click="prevMonth">◀</button>
-        <h3>{{ viewYear }}年{{ viewMonth + 1 }}月</h3>
+        <h3>{{ formatYearMonth(viewYear, viewMonth + 1) }}</h3>
         <button class="nav-btn" @click="nextMonth">▶</button>
       </div>
-      <button class="today-btn" @click="goToToday">今日</button>
+      <button class="today-btn" @click="goToToday">{{ t('todayBtn') }}</button>
     </div>
 
     <div class="weekdays">
@@ -36,6 +36,8 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useLanguage } from '@/composables/useLanguage'
+import { yearMonthFormatters } from '@/i18n/translations'
 
 const props = defineProps({
   careLogs: {
@@ -50,10 +52,20 @@ const props = defineProps({
 
 const emit = defineEmits(['select-date'])
 
-const weekdays = ['日', '月', '火', '水', '木', '金', '土']
+const { t, lang } = useLanguage()
+
+const weekdays = computed(() => [
+  t('weekdaySun'), t('weekdayMon'), t('weekdayTue'), t('weekdayWed'),
+  t('weekdayThu'), t('weekdayFri'), t('weekdaySat')
+])
+
+function formatYearMonth(year, month) {
+  return (yearMonthFormatters[lang.value] || yearMonthFormatters.ja)(year, month)
+}
 
 const careTypeColor = { water: '#4a90d9', fertilize: '#4a9d5f', harvest: '#d9a92a', other: '#9b9b9b' }
-const careTypeLabel = { water: '水やり', fertilize: '肥料', harvest: '収穫', other: 'その他' }
+const careTypeKeyMap = { water: 'careWater', fertilize: 'careFertilize', harvest: 'careHarvest', other: 'other' }
+const careTypeLabel = (type) => t(careTypeKeyMap[type] || 'other')
 const DOT_LIMIT = 4
 
 const today = new Date()
@@ -115,7 +127,7 @@ const careTypesByDate = computed(() => {
     if (!map.has(dateStr)) map.set(dateStr, { types: new Set(), hasUntyped: false })
     const entry = map.get(dateStr)
     if (log.careType) {
-      log.careType.split(',').forEach(t => entry.types.add(t))
+      log.careType.split(',').forEach(type => entry.types.add(type))
     } else {
       entry.hasUntyped = true
     }
@@ -139,11 +151,11 @@ const cells = computed(() => {
     const entry = careTypesByDate.value.get(dateStr)
     const typeList = entry ? [...entry.types] : []
     const hasUntyped = entry ? entry.hasUntyped : false
-    const dots = typeList.slice(0, DOT_LIMIT).map(t => careTypeColor[t] || careTypeColor.other)
+    const dots = typeList.slice(0, DOT_LIMIT).map(type => careTypeColor[type] || careTypeColor.other)
     const extraCount = Math.max(0, typeList.length - DOT_LIMIT)
     const isFuture = dateStr > todayStr
-    const labels = typeList.map(t => careTypeLabel[t] || t)
-    if (hasUntyped) labels.push('種別未設定')
+    const labels = typeList.map(careTypeLabel)
+    if (hasUntyped) labels.push(t('untypedLabel'))
     const tooltip = labels.length ? `${dateStr}: ${labels.join('・')}` : dateStr
     result.push({ day, date: dateStr, dots, hasUntyped, extraCount, isToday: dateStr === todayStr, isFuture, tooltip })
   }

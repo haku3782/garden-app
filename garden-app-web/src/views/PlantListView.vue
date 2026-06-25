@@ -1,17 +1,17 @@
 <template>
   <div class="container">
     <header>
-      <h1>My植物管理</h1>
+      <h1>{{ t('appTitle') }}</h1>
       <div class="header-actions">
-        <button @click="router.push('/gallery')" class="ghost-btn icon-btn" title="ギャラリー">▭</button>
-        <button @click="handleLogout" class="ghost-btn icon-btn" title="ログアウト">⏻</button>
+        <button @click="router.push('/gallery')" class="ghost-btn icon-btn" :title="t('galleryTitle')">▭</button>
+        <button @click="handleLogout" class="ghost-btn icon-btn" :title="t('logoutTitle')">⏻</button>
       </div>
     </header>
 
     <div class="plant-list">
       <div class="list-heading-row">
-        <h2>植物一覧</h2>
-        <button @click="router.push('/plants/new')" class="add-plant-btn">＋ 植物を追加</button>
+        <h2>{{ t('plantListTitle') }}</h2>
+        <button @click="router.push('/plants/new')" class="add-plant-btn">{{ t('addPlantBtn') }}</button>
       </div>
 
       <div class="type-tabs">
@@ -22,11 +22,11 @@
           class="type-tab"
           :class="{ active: selectedType === option.value }"
           @click="selectedType = option.value"
-        >{{ option.label }}</button>
+        >{{ t(option.labelKey) }}</button>
       </div>
 
-      <p v-if="isLoading" class="loading-message">読み込み中...</p>
-      <p v-else-if="filteredPlants.length === 0" class="empty-message">植物が登録されていません</p>
+      <p v-if="isLoading" class="loading-message">{{ t('loadingText') }}</p>
+      <p v-else-if="filteredPlants.length === 0" class="empty-message">{{ t('noPlantsText') }}</p>
       <div v-else class="plant-grid">
         <div v-for="plant in filteredPlants" :key="plant.id" class="plant-card">
           <div class="plant-info" @click="goToDetail(plant.id)">
@@ -46,11 +46,13 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useLanguage } from '@/composables/useLanguage'
 import { getPlants } from '@/api/plants'
 import PlantPlaceholderIcon from '@/components/PlantPlaceholderIcon.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const { t } = useLanguage()
 
 const plants = ref([])
 const isLoading = ref(true)
@@ -58,13 +60,13 @@ const isLoading = ref(true)
 const selectedType = ref('all')
 
 const typeFilterOptions = [
-  { value: 'all', label: 'すべて' },
-  { value: 'vegetable', label: '野菜' },
-  { value: 'fruit', label: '果物' },
-  { value: 'herb', label: 'ハーブ' },
-  { value: 'flower', label: '花' },
-  { value: 'tree', label: '樹木' },
-  { value: 'other', label: 'その他' }
+  { value: 'all', labelKey: 'typeAll' },
+  { value: 'vegetable', labelKey: 'typeVegetable' },
+  { value: 'fruit', labelKey: 'typeFruit' },
+  { value: 'herb', labelKey: 'typeHerb' },
+  { value: 'flower', labelKey: 'typeFlower' },
+  { value: 'tree', labelKey: 'typeTree' },
+  { value: 'other', labelKey: 'other' }
 ]
 
 const filteredPlants = computed(() => {
@@ -84,7 +86,7 @@ function goToDetail(id) {
 }
 
 function handleLogout() {
-  if (!confirm('ログアウトしますか？')) return
+  if (!confirm(t('logoutConfirm'))) return
   authStore.logout()
   router.push('/login')
 }

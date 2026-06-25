@@ -1,13 +1,13 @@
 <template>
   <div class="auth-container">
-    <h1 class="site-title">My植物管理</h1>
-    <h2>新規登録</h2>
+    <h1 class="site-title">{{ t('appTitle') }}</h1>
+    <h2>{{ t('registerTitle') }}</h2>
     <form @submit.prevent="handleRegister">
-      <input v-model="username" type="text" placeholder="ユーザー名" required />
-      <input v-model="password" type="password" placeholder="パスワード" required />
-      <button type="submit">登録</button>
+      <input v-model="username" type="text" :placeholder="t('usernamePlaceholder')" required />
+      <input v-model="password" type="password" :placeholder="t('passwordPlaceholder')" required />
+      <button type="submit">{{ t('registerBtn') }}</button>
     </form>
-    <p class="auth-switch">アカウントがある方は<router-link to="/login">ログイン</router-link></p>
+    <p class="auth-switch">{{ t('hasAccountText') }}<router-link to="/login">{{ t('loginLink') }}</router-link></p>
     <p v-if="error" class="error">{{ error }}</p>
   </div>
 </template>
@@ -16,10 +16,12 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useLanguage } from '@/composables/useLanguage'
 import { register } from '@/api/auth'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const { t } = useLanguage()
 
 const username = ref('')
 const password = ref('')
@@ -31,7 +33,7 @@ async function handleRegister() {
     authStore.login(res.data.token, username.value)
     router.push('/plants')
   } catch {
-    error.value = '登録に失敗しました'
+    error.value = t('registerError')
   }
 }
 </script>

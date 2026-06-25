@@ -1,30 +1,30 @@
 <template>
   <div class="container">
     <div class="top-bar">
-      <button @click="router.back()" class="back-btn">← 戻る</button>
-      <button @click="router.push('/plants')" class="back-btn">TOPへ</button>
+      <button @click="router.back()" class="back-btn">{{ t('backBtn') }}</button>
+      <button @click="router.push('/plants')" class="back-btn">{{ t('topBtn') }}</button>
     </div>
 
-    <p v-if="isLoading" class="loading-message">読み込み中...</p>
+    <p v-if="isLoading" class="loading-message">{{ t('loadingText') }}</p>
 
     <div v-if="plant" class="plant-card">
       <div v-if="editingPlant" class="plant-edit-form" @click.stop>
-        <p class="edit-note">サムネイルはケア履歴に登録されている最新の画像が表示されます</p>
-        <input v-model="plantEditForm.name" type="text" placeholder="植物名" />
+        <p class="edit-note">{{ t('thumbnailNote') }}</p>
+        <input v-model="plantEditForm.name" type="text" :placeholder="t('plantNamePlaceholder')" />
         <select v-model="plantEditForm.type">
-          <option value="vegetable">野菜</option>
-          <option value="fruit">果物</option>
-          <option value="herb">ハーブ</option>
-          <option value="flower">花</option>
-          <option value="tree">樹木</option>
-          <option value="other">その他</option>
+          <option value="vegetable">{{ t('typeVegetable') }}</option>
+          <option value="fruit">{{ t('typeFruit') }}</option>
+          <option value="herb">{{ t('typeHerb') }}</option>
+          <option value="flower">{{ t('typeFlower') }}</option>
+          <option value="tree">{{ t('typeTree') }}</option>
+          <option value="other">{{ t('other') }}</option>
         </select>
-        <input v-model="plantEditForm.memo" type="text" placeholder="コメント" />
+        <input v-model="plantEditForm.memo" type="text" :placeholder="t('commentPlaceholder')" />
         <div class="edit-actions">
-          <button type="button" class="delete-btn" @click="handleDeletePlant">削除</button>
+          <button type="button" class="delete-btn" @click="handleDeletePlant">{{ t('deleteBtn') }}</button>
           <div class="edit-actions-right">
-            <button :disabled="!plantEditForm.name" @click="savePlantEdit">保存</button>
-            <button type="button" class="cancel-btn" @click="cancelPlantEdit">キャンセル</button>
+            <button :disabled="!plantEditForm.name" @click="savePlantEdit">{{ t('saveBtn') }}</button>
+            <button type="button" class="cancel-btn" @click="cancelPlantEdit">{{ t('cancelBtn') }}</button>
           </div>
         </div>
       </div>
@@ -43,8 +43,8 @@
 
     <template v-if="!isLoading">
       <div class="care-heading-row">
-        <h2 class="care-heading">記録<span v-if="selectedDate" class="selected-date-label">（{{ selectedDate }}）</span></h2>
-        <button @click="router.push(`/plants/${route.params.id}/care/new`)" class="add-care-btn">＋ 記録を追加</button>
+        <h2 class="care-heading">{{ t('recordsTitle') }}<span v-if="selectedDate" class="selected-date-label">（{{ selectedDate }}）</span></h2>
+        <button @click="router.push(`/plants/${route.params.id}/care/new`)" class="add-care-btn">{{ t('addRecordBtn') }}</button>
       </div>
 
       <!-- カレンダー -->
@@ -55,18 +55,18 @@
         <input ref="editCameraInput" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" @change="handleEditPhotoSelect" class="hidden-file-input" />
         <input ref="editGalleryInput" type="file" accept="image/jpeg,image/png,image/webp" @change="handleEditPhotoSelect" class="hidden-file-input" />
 
-        <p v-if="filteredCareLogs.length === 0" class="empty-message">ケア記録がありません</p>
+        <p v-if="filteredCareLogs.length === 0" class="empty-message">{{ t('noCareRecordsText') }}</p>
         <div v-for="log in filteredCareLogs" :key="log.id" class="care-card" @click="handleCardClick(log)">
           <div v-if="editingIds.includes(log.id)" class="edit-care-form" @click.stop>
             <div class="edit-photo-row">
               <div v-if="log.photoUrl" class="edit-photo-preview-wrap">
-                <img :src="log.photoUrl" alt="ケア記録の写真" class="edit-photo-preview" />
-                <button type="button" class="delete-photo-btn" title="写真を削除" @click="handleDeletePhoto(log)"></button>
+                <img :src="log.photoUrl" :alt="t('careLogPhotoAlt')" class="edit-photo-preview" />
+                <button type="button" class="delete-photo-btn" :title="t('deletePhotoTitle')" @click="handleDeletePhoto(log)"></button>
               </div>
               <template v-else>
                 <div class="edit-photo-preview edit-photo-placeholder"></div>
-                <button type="button" class="camera-btn" @click="openEditCamera(log.id)">◎ 撮影</button>
-                <button type="button" @click="openEditGallery(log.id)">▭ <span class="select-text-mobile">選択</span><span class="select-text-desktop">写真を選択</span></button>
+                <button type="button" class="camera-btn" @click="openEditCamera(log.id)">◎ {{ t('takePhotoBtn') }}</button>
+                <button type="button" @click="openEditGallery(log.id)">▭ <span class="select-text-mobile">{{ t('selectPhotoBtn') }}</span><span class="select-text-desktop">{{ t('selectPhotoBtnFull') }}</span></button>
               </template>
             </div>
             <div class="care-type-select">
@@ -78,20 +78,20 @@
                 :class="{ active: editForms[log.id].careTypes.includes(option.value) }"
                 :style="editForms[log.id].careTypes.includes(option.value) ? { background: careTypeColor(option.value), borderColor: careTypeColor(option.value) } : {}"
                 @click="toggleEditType(log.id, option.value)"
-              >{{ option.label }}</button>
+              >{{ t(option.labelKey) }}</button>
             </div>
             <input v-model="editForms[log.id].caredAt" type="datetime-local" />
-            <input v-model="editForms[log.id].memo" type="text" placeholder="コメント" />
+            <input v-model="editForms[log.id].memo" type="text" :placeholder="t('commentPlaceholder')" />
             <div class="edit-actions">
-              <button type="button" class="delete-btn" @click="handleDeleteCareLog(log.id)">削除</button>
+              <button type="button" class="delete-btn" @click="handleDeleteCareLog(log.id)">{{ t('deleteBtn') }}</button>
               <div class="edit-actions-right">
-                <button @click="saveEdit(log)">保存</button>
-                <button type="button" class="cancel-btn" @click="cancelEdit(log.id)">キャンセル</button>
+                <button @click="saveEdit(log)">{{ t('saveBtn') }}</button>
+                <button type="button" class="cancel-btn" @click="cancelEdit(log.id)">{{ t('cancelBtn') }}</button>
               </div>
             </div>
           </div>
           <template v-else>
-            <img v-if="log.photoUrl" :src="log.photoUrl" alt="ケア記録の写真" class="care-photo" />
+            <img v-if="log.photoUrl" :src="log.photoUrl" :alt="t('careLogPhotoAlt')" class="care-photo" />
             <div class="care-info">
               <div class="care-info-top">
                 <span class="care-date">{{ formatDateTime(log.caredAt) }}</span>
@@ -120,9 +120,11 @@ import { getPlants, updatePlant, deletePlant } from '@/api/plants'
 import { getCareLogs, updateCareLog, deleteCareLog, uploadCareLogPhoto, deleteCareLogPhoto } from '@/api/careLogs'
 import CareCalendar from '@/components/CareCalendar.vue'
 import PlantPlaceholderIcon from '@/components/PlantPlaceholderIcon.vue'
+import { useLanguage } from '@/composables/useLanguage'
 
 const route = useRoute()
 const router = useRouter()
+const { t } = useLanguage()
 
 const plant = ref(null)
 const careLogs = ref([])
@@ -159,7 +161,7 @@ function selectLatestDate() {
 }
 
 async function handleDeletePlant() {
-  if (!confirm('この植物を削除しますか？')) return
+  if (!confirm(t('deletePlantConfirm'))) return
   await deletePlant(route.params.id)
   router.push('/plants')
 }
@@ -181,15 +183,11 @@ async function savePlantEdit() {
   editingPlant.value = false
 }
 
-const typeLabel = (type) => ({
-  vegetable: '野菜', fruit: '果物', herb: 'ハーブ',
-  flower: '花', tree: '樹木', other: 'その他'
-}[type] || type)
+const typeKeyMap = { vegetable: 'typeVegetable', fruit: 'typeFruit', herb: 'typeHerb', flower: 'typeFlower', tree: 'typeTree', other: 'other' }
+const typeLabel = (type) => t(typeKeyMap[type] || 'other')
 
-const careTypeLabel = (type) => ({
-  water: '水やり', fertilize: '肥料',
-  harvest: '収穫', other: 'その他'
-}[type] || type)
+const careTypeKeyMap = { water: 'careWater', fertilize: 'careFertilize', harvest: 'careHarvest', other: 'other' }
+const careTypeLabel = (type) => t(careTypeKeyMap[type] || 'other')
 
 // calendarのドット表示と同じ配色
 const careTypeColor = (type) => ({
@@ -200,10 +198,10 @@ const careTypeColor = (type) => ({
 const parseCareTypes = (careType) => careType ? careType.split(',') : []
 
 const careTypeOptions = [
-  { value: 'water', label: '水やり' },
-  { value: 'fertilize', label: '肥料' },
-  { value: 'harvest', label: '収穫' },
-  { value: 'other', label: 'その他' }
+  { value: 'water', labelKey: 'careWater' },
+  { value: 'fertilize', labelKey: 'careFertilize' },
+  { value: 'harvest', labelKey: 'careHarvest' },
+  { value: 'other', labelKey: 'other' }
 ]
 
 // plant.latestPhotoUrl はサーバー側で「写真付きの最新ケア記録」から算出されるため、

@@ -1,17 +1,17 @@
 <template>
   <div class="container">
     <div class="top-bar">
-      <button @click="router.back()" class="back-btn">← 戻る</button>
-      <button @click="router.push('/plants')" class="back-btn">TOPへ</button>
+      <button @click="router.back()" class="back-btn">{{ t('backBtn') }}</button>
+      <button @click="router.push('/plants')" class="back-btn">{{ t('topBtn') }}</button>
     </div>
-    <h1>記録を追加</h1>
+    <h1>{{ t('addRecordTitle') }}</h1>
 
     <div class="add-care-form">
       <div class="photo-select-row">
         <input ref="cameraInput" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" @change="handlePhotoSelect" class="hidden-file-input" />
         <input ref="galleryInput" type="file" accept="image/jpeg,image/png,image/webp" @change="handlePhotoSelect" class="hidden-file-input" />
-        <button type="button" class="camera-btn" @click="cameraInput.click()">◎ 撮影</button>
-        <button type="button" @click="galleryInput.click()">▭ <span class="select-text-mobile">選択</span><span class="select-text-desktop">写真を選択</span></button>
+        <button type="button" class="camera-btn" @click="cameraInput.click()">◎ {{ t('takePhotoBtn') }}</button>
+        <button type="button" @click="galleryInput.click()">▭ <span class="select-text-mobile">{{ t('selectPhotoBtn') }}</span><span class="select-text-desktop">{{ t('selectPhotoBtnFull') }}</span></button>
         <span v-if="selectedPhoto" class="selected-photo-name">{{ selectedPhoto.name }}</span>
       </div>
       <div class="care-type-select">
@@ -23,13 +23,13 @@
           :class="{ active: selectedTypes.includes(option.value) }"
           :style="selectedTypes.includes(option.value) ? { background: careTypeColor(option.value), borderColor: careTypeColor(option.value) } : {}"
           @click="toggleType(option.value)"
-        >{{ option.label }}</button>
+        >{{ t(option.labelKey) }}</button>
       </div>
       <input v-model="newCareLog.caredAt" type="datetime-local" />
-      <input v-model="newCareLog.memo" type="text" placeholder="コメント" />
+      <input v-model="newCareLog.memo" type="text" :placeholder="t('commentPlaceholder')" />
       <div class="add-care-actions">
-        <button @click="handleCreateCareLog">保存</button>
-        <button type="button" class="cancel-btn" @click="router.back()">キャンセル</button>
+        <button @click="handleCreateCareLog">{{ t('saveBtn') }}</button>
+        <button type="button" class="cancel-btn" @click="router.back()">{{ t('cancelBtn') }}</button>
       </div>
     </div>
   </div>
@@ -38,10 +38,12 @@
 <script setup>
 import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useLanguage } from '@/composables/useLanguage'
 import { createCareLog, uploadCareLogPhoto } from '@/api/careLogs'
 
 const route = useRoute()
 const router = useRouter()
+const { t } = useLanguage()
 
 const newCareLog = ref({
   memo: '',
@@ -53,10 +55,10 @@ const galleryInput = ref(null)
 const selectedPhoto = ref(null)
 
 const careTypeOptions = [
-  { value: 'water', label: '水やり' },
-  { value: 'fertilize', label: '肥料' },
-  { value: 'harvest', label: '収穫' },
-  { value: 'other', label: 'その他' }
+  { value: 'water', labelKey: 'careWater' },
+  { value: 'fertilize', labelKey: 'careFertilize' },
+  { value: 'harvest', labelKey: 'careHarvest' },
+  { value: 'other', labelKey: 'other' }
 ]
 
 // calendar・履歴一覧と同じ配色

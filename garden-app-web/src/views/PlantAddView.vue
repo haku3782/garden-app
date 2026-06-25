@@ -1,9 +1,9 @@
 <template>
   <div class="container">
     <div class="top-bar">
-      <button @click="router.back()" class="back-btn">← 戻る</button>
+      <button @click="router.back()" class="back-btn">{{ t('backBtn') }}</button>
     </div>
-    <h1>植物を追加</h1>
+    <h1>{{ t('addPlantTitle') }}</h1>
 
     <div class="add-form">
       <div class="type-tabs">
@@ -14,13 +14,13 @@
           class="type-tab"
           :class="{ active: newPlant.type === option.value }"
           @click="newPlant.type = option.value"
-        >{{ option.label }}</button>
+        >{{ t(option.labelKey) }}</button>
       </div>
-      <input v-model="newPlant.name" type="text" placeholder="名前" />
-      <input v-model="newPlant.memo" type="text" placeholder="コメント" />
+      <input v-model="newPlant.name" type="text" :placeholder="t('namePlaceholder')" />
+      <input v-model="newPlant.memo" type="text" :placeholder="t('commentPlaceholder')" />
       <div class="add-actions">
-        <button @click="handleCreate">保存</button>
-        <button type="button" class="cancel-btn" @click="router.back()">キャンセル</button>
+        <button @click="handleCreate">{{ t('saveBtn') }}</button>
+        <button type="button" class="cancel-btn" @click="router.back()">{{ t('cancelBtn') }}</button>
       </div>
       <p v-if="error" class="error">{{ error }}</p>
     </div>
@@ -30,9 +30,11 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useLanguage } from '@/composables/useLanguage'
 import { createPlant } from '@/api/plants'
 
 const router = useRouter()
+const { t } = useLanguage()
 
 const newPlant = ref({
   name: '',
@@ -42,12 +44,12 @@ const newPlant = ref({
 const error = ref('')
 
 const typeOptions = [
-  { value: 'vegetable', label: '野菜' },
-  { value: 'fruit', label: '果物' },
-  { value: 'herb', label: 'ハーブ' },
-  { value: 'flower', label: '花' },
-  { value: 'tree', label: '樹木' },
-  { value: 'other', label: 'その他' }
+  { value: 'vegetable', labelKey: 'typeVegetable' },
+  { value: 'fruit', labelKey: 'typeFruit' },
+  { value: 'herb', labelKey: 'typeHerb' },
+  { value: 'flower', labelKey: 'typeFlower' },
+  { value: 'tree', labelKey: 'typeTree' },
+  { value: 'other', labelKey: 'other' }
 ]
 
 // ローカル時刻のまま "YYYY-MM-DDTHH:mm" を作る（toISOStringはUTC変換され日付がずれるため使わない）
@@ -59,7 +61,7 @@ function nowLocalDateTime() {
 
 async function handleCreate() {
   if (!newPlant.value.name || !newPlant.value.type) {
-    error.value = '種類と名前を入力してください'
+    error.value = t('addPlantError')
     return
   }
   error.value = ''

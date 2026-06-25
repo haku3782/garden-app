@@ -1,12 +1,12 @@
 <template>
   <div class="container">
     <div class="top-bar">
-      <button @click="router.back()" class="back-btn">← 戻る</button>
-      <button @click="router.push('/plants')" class="back-btn">TOPへ</button>
+      <button @click="router.back()" class="back-btn">{{ t('backBtn') }}</button>
+      <button @click="router.push('/plants')" class="back-btn">{{ t('topBtn') }}</button>
     </div>
-    <h1>ギャラリー</h1>
+    <h1>{{ t('galleryViewTitle') }}</h1>
 
-    <p v-if="photos.length === 0">写真付きのケア記録がまだありません</p>
+    <p v-if="photos.length === 0">{{ t('noPhotosMessage') }}</p>
 
     <div class="gallery-grid">
       <div v-for="photo in photos" :key="photo.id" class="gallery-card" @click="goToPlant(photo)">
@@ -25,15 +25,16 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useLanguage } from '@/composables/useLanguage'
 import { getPhotoGallery } from '@/api/gallery'
 
 const router = useRouter()
+const { t } = useLanguage()
 const photos = ref([])
 
-const careTypeLabel = (type) => ({
-  water: '💧水やり', fertilize: '🌿肥料',
-  harvest: '🌾収穫', other: 'その他'
-}[type] || type)
+const careTypeEmoji = { water: '💧', fertilize: '🌿', harvest: '🌾', other: '' }
+const careTypeKey = { water: 'careWater', fertilize: 'careFertilize', harvest: 'careHarvest', other: 'other' }
+const careTypeLabel = (type) => `${careTypeEmoji[type] || ''}${t(careTypeKey[type] || 'other')}`
 
 // careType（カンマ区切りの複数種別）をまとめて表示する
 const careTypeLabels = (careType) => careType ? careType.split(',').map(careTypeLabel).join('・') : ''
