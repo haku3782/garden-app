@@ -1,10 +1,10 @@
 <template>
   <div class="container">
     <header>
-      <h1>🌱 家庭菜園管理</h1>
+      <h1>🌱 植物管理</h1>
       <div class="header-actions">
-        <button @click="router.push('/gallery')" class="ghost-btn icon-btn" title="ギャラリー">🖼️</button>
-        <button @click="handleLogout" class="ghost-btn icon-btn" title="ログアウト">🚪</button>
+        <button @click="router.push('/gallery')" class="ghost-btn icon-btn" title="ギャラリー">▭</button>
+        <button @click="handleLogout" class="ghost-btn icon-btn" title="ログアウト">⏻</button>
       </div>
     </header>
 
@@ -31,7 +31,9 @@
         <div v-for="plant in filteredPlants" :key="plant.id" class="plant-card">
           <div class="plant-info" @click="goToDetail(plant.id)">
             <img v-if="plant.latestPhotoUrl" :src="plant.latestPhotoUrl" alt="" class="plant-thumbnail" />
-            <div v-else class="plant-thumbnail plant-thumbnail-placeholder"></div>
+            <div v-else class="plant-thumbnail plant-thumbnail-placeholder">
+              <PlantPlaceholderIcon :size="64" />
+            </div>
             <span class="plant-name">{{ plant.name }}</span>
           </div>
         </div>
@@ -45,6 +47,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { getPlants } from '@/api/plants'
+import PlantPlaceholderIcon from '@/components/PlantPlaceholderIcon.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -141,7 +144,7 @@ button:active { transform: scale(0.97); }
 }
 .ghost-btn:hover { background: var(--color-bg-soft); color: #2d3436; }
 
-.icon-btn { padding: 0.45rem; width: 2.1rem; height: 2.1rem; display: flex; align-items: center; justify-content: center; font-size: 1rem; }
+.icon-btn { padding: 0.45rem; width: 2.1rem; height: 2.1rem; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
 
 .type-tabs { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
 .type-tab {
@@ -178,7 +181,7 @@ button:active { transform: scale(0.97); }
 
 .plant-info { display: flex; gap: 0.85rem; align-items: center; cursor: pointer; flex: 1; min-width: 0; }
 .plant-thumbnail { width: 64px; height: 64px; object-fit: cover; border-radius: var(--radius); flex-shrink: 0; }
-.plant-thumbnail-placeholder { background: var(--color-bg-soft); }
+.plant-thumbnail-placeholder { background: var(--color-bg-soft); display: flex; align-items: center; justify-content: center; }
 .plant-name { font-weight: 500; font-size: 0.9rem; }
 
 .add-plant-btn { padding: 0.45rem 0.8rem; font-size: 0.85rem; flex-shrink: 0; }

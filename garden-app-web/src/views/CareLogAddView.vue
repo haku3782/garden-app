@@ -4,14 +4,14 @@
       <button @click="router.back()" class="back-btn">← 戻る</button>
       <button @click="router.push('/plants')" class="back-btn">TOPへ</button>
     </div>
-    <h1>ケア記録を追加</h1>
+    <h1>記録を追加</h1>
 
     <div class="add-care-form">
       <div class="photo-select-row">
         <input ref="cameraInput" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" @change="handlePhotoSelect" class="hidden-file-input" />
         <input ref="galleryInput" type="file" accept="image/jpeg,image/png,image/webp" @change="handlePhotoSelect" class="hidden-file-input" />
-        <button type="button" @click="cameraInput.click()">📷 撮影</button>
-        <button type="button" @click="galleryInput.click()">🏞️ 選択</button>
+        <button type="button" class="camera-btn" @click="cameraInput.click()">◎ 撮影</button>
+        <button type="button" @click="galleryInput.click()">▭ <span class="select-text-mobile">選択</span><span class="select-text-desktop">写真を選択</span></button>
         <span v-if="selectedPhoto" class="selected-photo-name">{{ selectedPhoto.name }}</span>
       </div>
       <div class="care-type-select">
@@ -188,6 +188,7 @@ input:focus {
 }
 .photo-select-row button:hover { background: var(--color-bg-soft); color: #2d3436; }
 .selected-photo-name { color: var(--color-muted); font-size: 0.85rem; }
+.select-text-desktop { display: none; }
 
 button {
   padding: 0.65rem 1.1rem;
@@ -214,5 +215,8 @@ button:disabled { background: var(--color-border); color: var(--color-muted); cu
 
 @media (min-width: 768px) {
   .container { max-width: 600px; padding: 2rem; }
+  .camera-btn { display: none; }
+  .select-text-mobile { display: none; }
+  .select-text-desktop { display: inline; }
 }
 </style>

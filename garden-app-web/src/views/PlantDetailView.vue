@@ -1,17 +1,15 @@
 <template>
   <div class="container">
     <div class="top-bar">
-      <div class="top-bar-left">
-        <button @click="router.back()" class="back-btn">← 戻る</button>
-        <button @click="router.push('/plants')" class="back-btn">TOPへ</button>
-      </div>
-      <button @click="router.push(`/plants/${route.params.id}/care/new`)" class="add-care-btn">＋ ケア記録を追加</button>
+      <button @click="router.back()" class="back-btn">← 戻る</button>
+      <button @click="router.push('/plants')" class="back-btn">TOPへ</button>
     </div>
 
     <p v-if="isLoading" class="loading-message">読み込み中...</p>
 
     <div v-if="plant" class="plant-card">
       <div v-if="editingPlant" class="plant-edit-form" @click.stop>
+        <p class="edit-note">サムネイルはケア履歴に登録されている最新の画像が表示されます</p>
         <input v-model="plantEditForm.name" type="text" placeholder="植物名" />
         <select v-model="plantEditForm.type">
           <option value="vegetable">野菜</option>
@@ -32,7 +30,9 @@
       </div>
       <div v-else class="plant-card-body" @click="startEditPlant">
         <img v-if="plant.latestPhotoUrl" :src="plant.latestPhotoUrl" alt="" class="plant-detail-thumbnail" />
-        <div v-else class="plant-detail-thumbnail plant-thumbnail-placeholder"></div>
+        <div v-else class="plant-detail-thumbnail plant-thumbnail-placeholder">
+          <PlantPlaceholderIcon :size="80" />
+        </div>
         <div class="plant-info-col">
           <h1>{{ plant.name }}</h1>
           <span class="plant-type-badge">{{ typeLabel(plant.type) }}</span>
@@ -42,7 +42,10 @@
     </div>
 
     <template v-if="!isLoading">
-      <h2 class="care-heading">履歴<span v-if="selectedDate" class="selected-date-label">（{{ selectedDate }}）</span></h2>
+      <div class="care-heading-row">
+        <h2 class="care-heading">記録<span v-if="selectedDate" class="selected-date-label">（{{ selectedDate }}）</span></h2>
+        <button @click="router.push(`/plants/${route.params.id}/care/new`)" class="add-care-btn">＋ 記録を追加</button>
+      </div>
 
       <!-- カレンダー -->
       <CareCalendar :care-logs="careLogs" :selected-date="selectedDate" @select-date="selectedDate = $event" />
@@ -62,8 +65,8 @@
               </div>
               <template v-else>
                 <div class="edit-photo-preview edit-photo-placeholder"></div>
-                <button type="button" @click="openEditCamera(log.id)">📷 撮影</button>
-                <button type="button" @click="openEditGallery(log.id)">🏞️ 選択</button>
+                <button type="button" class="camera-btn" @click="openEditCamera(log.id)">◎ 撮影</button>
+                <button type="button" @click="openEditGallery(log.id)">▭ <span class="select-text-mobile">選択</span><span class="select-text-desktop">写真を選択</span></button>
               </template>
             </div>
             <div class="care-type-select">
@@ -91,13 +94,15 @@
             <img v-if="log.photoUrl" :src="log.photoUrl" alt="ケア記録の写真" class="care-photo" />
             <div class="care-info">
               <div class="care-info-top">
-                <span
-                  v-for="type in parseCareTypes(log.careType)"
-                  :key="type"
-                  class="care-type-badge"
-                  :style="{ background: careTypeColor(type) }"
-                >{{ careTypeLabel(type) }}</span>
                 <span class="care-date">{{ formatDateTime(log.caredAt) }}</span>
+                <div class="care-type-row">
+                  <span
+                    v-for="type in parseCareTypes(log.careType)"
+                    :key="type"
+                    class="care-type-badge"
+                    :style="{ background: careTypeColor(type) }"
+                  >{{ careTypeLabel(type) }}</span>
+                </div>
               </div>
               <p v-if="log.memo" class="care-memo">{{ log.memo }}</p>
             </div>
@@ -114,6 +119,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { getPlants, updatePlant, deletePlant } from '@/api/plants'
 import { getCareLogs, updateCareLog, deleteCareLog, uploadCareLogPhoto, deleteCareLogPhoto } from '@/api/careLogs'
 import CareCalendar from '@/components/CareCalendar.vue'
+import PlantPlaceholderIcon from '@/components/PlantPlaceholderIcon.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -200,13 +206,25 @@ const careTypeOptions = [
   { value: 'other', label: 'その他' }
 ]
 
+// plant.latestPhotoUrl はサーバー側で「写真付きの最新ケア記録」から算出されるため、
+// ケア記録側の写真を変更・削除した際は植物情報も再取得しないと古い写真が表示され続ける
+async function refreshPlant() {
+  const res = await getPlants()
+  plant.value = res.data.find(p => p.id === route.params.id)
+}
+
 onMounted(async () => {
   const plantId = route.params.id
   const plantsRes = await getPlants()
   plant.value = plantsRes.data.find(p => p.id === plantId)
   const logsRes = await getCareLogs(plantId)
   careLogs.value = logsRes.data
-  selectLatestDate()
+  // ギャラリーからの遷移時はその日付を選択、それ以外は最新日付を選択
+  if (route.query.date) {
+    selectedDate.value = route.query.date
+  } else {
+    selectLatestDate()
+  }
   isLoading.value = false
 })
 
@@ -269,6 +287,7 @@ async function saveEdit(log) {
   await updateCareLog(route.params.id, log.id, payload)
   const res = await getCareLogs(route.params.id)
   careLogs.value = res.data
+  await refreshPlant()
   cancelEdit(log.id)
 }
 
@@ -289,6 +308,7 @@ async function handleEditPhotoSelect(event) {
   await uploadCareLogPhoto(route.params.id, activePhotoTargetId.value, compressed)
   const res = await getCareLogs(route.params.id)
   careLogs.value = res.data
+  await refreshPlant()
   event.target.value = ''
 }
 
@@ -296,11 +316,13 @@ async function handleDeletePhoto(log) {
   await deleteCareLogPhoto(route.params.id, log.id)
   const res = await getCareLogs(route.params.id)
   careLogs.value = res.data
+  await refreshPlant()
 }
 
 async function handleDeleteCareLog(id) {
   await deleteCareLog(route.params.id, id)
   careLogs.value = careLogs.value.filter(l => l.id !== id)
+  await refreshPlant()
 }
 </script>
 
@@ -323,8 +345,7 @@ async function handleDeleteCareLog(id) {
   color: #2d3436;
 }
 
-.top-bar { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 1.5rem; }
-.top-bar-left { display: flex; gap: 0.5rem; }
+.top-bar { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1.5rem; }
 
 .back-btn {
   background: transparent;
@@ -343,6 +364,7 @@ async function handleDeleteCareLog(id) {
 .plant-card-body { display: flex; align-items: center; gap: 1rem; cursor: pointer; }
 
 .plant-edit-form { display: flex; flex-direction: column; gap: 0.5rem; }
+.edit-note { margin: 0; color: var(--color-muted); font-size: 0.8rem; }
 .plant-edit-form select {
   padding: 0.45rem 0.8rem;
   border: 1px solid var(--color-border);
@@ -357,13 +379,14 @@ async function handleDeleteCareLog(id) {
   box-shadow: 0 0 0 3px rgba(74, 157, 95, 0.15);
 }
 .plant-detail-thumbnail { width: 80px; height: 80px; object-fit: cover; border-radius: var(--radius); flex-shrink: 0; }
-.plant-thumbnail-placeholder { background: var(--color-bg-soft); }
+.plant-thumbnail-placeholder { background: var(--color-bg-soft); display: flex; align-items: center; justify-content: center; }
 .plant-info-col { display: flex; flex-direction: column; gap: 0.4rem; min-width: 0; }
-.plant-info-col h1 { font-size: 1.25rem; margin: 0; }
+.plant-info-col h1 { font-size: 0.95rem; margin: 0; }
 .plant-type-badge { align-self: flex-start; background: var(--color-bg-soft); color: #2d3436; border: 1px solid var(--color-border); padding: 0.2rem 0.7rem; font-size: 0.8rem; border-radius: 999px; }
 .plant-memo { margin: 0; color: var(--color-muted); font-size: 0.9rem; }
 
-.care-heading { font-size: 1.05rem; margin: 1.5rem 0 0; }
+.care-heading-row { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-top: 1.5rem; }
+.care-heading { font-size: 1.05rem; margin: 0; }
 .selected-date-label { font-size: 0.9rem; color: var(--color-muted); font-weight: normal; }
 
 .care-section { margin-top: 1rem; }
@@ -430,7 +453,8 @@ button:disabled { background: var(--color-border); color: var(--color-muted); cu
 .care-card:hover { box-shadow: var(--shadow-md); }
 .care-photo { width: 100%; max-height: 320px; object-fit: cover; border-radius: var(--radius); }
 .care-info { display: flex; flex-direction: column; gap: 0.3rem; min-width: 0; }
-.care-info-top { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+.care-info-top { display: flex; flex-direction: column; gap: 0.3rem; }
+.care-type-row { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
 .care-type-badge { color: #fff; padding: 0.2rem 0.7rem; font-size: 0.8rem; border-radius: 999px; }
 .care-date { color: var(--color-muted); font-size: 0.85rem; }
 .care-memo { margin: 0; color: #555; font-size: 0.9rem; }
@@ -489,13 +513,17 @@ button:disabled { background: var(--color-border); color: var(--color-muted); cu
 .delete-photo-btn::before { transform: translate(-50%, -50%) rotate(45deg); }
 .delete-photo-btn::after { transform: translate(-50%, -50%) rotate(-45deg); }
 .edit-photo-row .delete-photo-btn:hover { background: var(--color-bg-soft); }
+.select-text-desktop { display: none; }
 
 @media (min-width: 768px) {
   .container { max-width: 900px; padding: 2rem; }
+  .camera-btn { display: none; }
+  .select-text-mobile { display: none; }
+  .select-text-desktop { display: inline; }
 }
 
 @media (min-width: 1024px) {
   .container { max-width: 1000px; }
-  .plant-info-col h1 { font-size: 1.6rem; }
+  .plant-info-col h1 { font-size: 1.05rem; }
 }
 </style>

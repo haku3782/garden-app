@@ -4,12 +4,12 @@
       <button @click="router.back()" class="back-btn">← 戻る</button>
       <button @click="router.push('/plants')" class="back-btn">TOPへ</button>
     </div>
-    <h1>📷 写真ギャラリー</h1>
+    <h1>ギャラリー</h1>
 
     <p v-if="photos.length === 0">写真付きのケア記録がまだありません</p>
 
     <div class="gallery-grid">
-      <div v-for="photo in photos" :key="photo.id" class="gallery-card">
+      <div v-for="photo in photos" :key="photo.id" class="gallery-card" @click="goToPlant(photo)">
         <img :src="photo.photoUrl" :alt="photo.plantName" class="gallery-photo" />
         <div class="gallery-info">
           <span class="gallery-plant-name">{{ photo.plantName }}</span>
@@ -40,6 +40,11 @@ const careTypeLabels = (careType) => careType ? careType.split(',').map(careType
 
 const formatDate = (dateStr) => dateStr ? dateStr.replace('T', ' ') : ''
 
+function goToPlant(photo) {
+  const date = photo.caredAt ? photo.caredAt.split('T')[0] : null
+  router.push({ path: `/plants/${photo.plantId}`, query: date ? { date } : {} })
+}
+
 onMounted(async () => {
   const res = await getPhotoGallery()
   photos.value = res.data
@@ -47,11 +52,28 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.container { max-width: 960px; margin: 0 auto; padding: 2rem; }
+.container {
+  --color-border: #e3e3e3;
+  --color-bg-soft: #f7f8f7;
+  --radius: 10px;
+
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 2rem;
+}
 .top-bar { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
-.back-btn { background: #999; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; }
+.back-btn {
+  background: transparent;
+  color: #767676;
+  border: 1px solid var(--color-border);
+  padding: 0.45rem 0.8rem;
+  font-size: 0.85rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+.back-btn:hover { background: var(--color-bg-soft); color: #2d3436; }
 .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; margin-top: 1.5rem; }
-.gallery-card { border: 1px solid #eee; border-radius: 8px; overflow: hidden; }
+.gallery-card { border: 1px solid #eee; border-radius: 8px; overflow: hidden; cursor: pointer; }
 .gallery-photo { width: 100%; height: 160px; object-fit: cover; display: block; }
 .gallery-info { display: flex; flex-direction: column; gap: 0.25rem; padding: 0.75rem; }
 .gallery-plant-name { font-weight: 500; }

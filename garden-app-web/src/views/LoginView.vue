@@ -1,6 +1,6 @@
 <template>
   <div class="auth-container">
-    <h1 class="site-title">🌱 家庭菜園管理</h1>
+    <h1 class="site-title">🌱 植物管理</h1>
     <h2>ログイン</h2>
     <form @submit.prevent="handleLogin">
       <input v-model="username" type="text" placeholder="ユーザー名" required />

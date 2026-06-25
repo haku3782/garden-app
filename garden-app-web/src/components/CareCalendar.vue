@@ -24,8 +24,9 @@
         @click="cell.day && !cell.isFuture && $emit('select-date', cell.date)"
       >
         <span v-if="cell.day" class="day-num">{{ cell.day }}</span>
-        <div v-if="cell.dots.length" class="day-dots">
+        <div v-if="cell.dots.length || cell.hasUntyped" class="day-dots">
           <span v-for="(color, i) in cell.dots" :key="i" class="day-dot" :style="{ background: color }"></span>
+          <span v-if="cell.hasUntyped" class="day-dot day-dot-hollow"></span>
           <span v-if="cell.extraCount > 0" class="day-extra">+{{ cell.extraCount }}</span>
         </div>
       </div>
@@ -56,8 +57,12 @@ const careTypeLabel = { water: '水やり', fertilize: '肥料', harvest: '収�
 const DOT_LIMIT = 4
 
 const today = new Date()
-const viewYear = ref(today.getFullYear())
-const viewMonth = ref(today.getMonth())
+// 初期表示月：選択中の日付があればその月、無ければ今月
+const [initialYear, initialMonth] = props.selectedDate
+  ? props.selectedDate.split('-').map(Number)
+  : [today.getFullYear(), today.getMonth() + 1]
+const viewYear = ref(initialYear)
+const viewMonth = ref(initialMonth - 1)
 
 function prevMonth() {
   if (viewMonth.value === 0) {
@@ -101,14 +106,19 @@ function goToFirstDate() {
   emit('select-date', earliestDate.value)
 }
 
-// dateStr（YYYY-MM-DD）ごとに、その日に行ったケア種別の集合を作る（同じ種別の重複は1つに集約）
+// dateStr（YYYY-MM-DD）ごとに、その日に行ったケア種別の集合と、種別未設定の記録があるかを記録する
 const careTypesByDate = computed(() => {
   const map = new Map()
   props.careLogs.forEach(log => {
     const dateStr = log.caredAt ? log.caredAt.split('T')[0] : null
     if (!dateStr) return
-    if (!map.has(dateStr)) map.set(dateStr, new Set())
-    if (log.careType) log.careType.split(',').forEach(t => map.get(dateStr).add(t))
+    if (!map.has(dateStr)) map.set(dateStr, { types: new Set(), hasUntyped: false })
+    const entry = map.get(dateStr)
+    if (log.careType) {
+      log.careType.split(',').forEach(t => entry.types.add(t))
+    } else {
+      entry.hasUntyped = true
+    }
   })
   return map
 })
@@ -122,19 +132,20 @@ const cells = computed(() => {
 
   const result = []
   for (let i = 0; i < firstWeekday; i++) {
-    result.push({ day: null, date: null, dots: [], extraCount: 0, isToday: false, isFuture: false, tooltip: '' })
+    result.push({ day: null, date: null, dots: [], hasUntyped: false, extraCount: 0, isToday: false, isFuture: false, tooltip: '' })
   }
   for (let day = 1; day <= daysInMonth; day++) {
     const dateStr = toDateStr(year, month, day)
-    const types = careTypesByDate.value.get(dateStr)
-    const typeList = types ? [...types] : []
+    const entry = careTypesByDate.value.get(dateStr)
+    const typeList = entry ? [...entry.types] : []
+    const hasUntyped = entry ? entry.hasUntyped : false
     const dots = typeList.slice(0, DOT_LIMIT).map(t => careTypeColor[t] || careTypeColor.other)
     const extraCount = Math.max(0, typeList.length - DOT_LIMIT)
     const isFuture = dateStr > todayStr
-    const tooltip = typeList.length
-      ? `${dateStr}: ${typeList.map(t => careTypeLabel[t] || t).join('・')}`
-      : dateStr
-    result.push({ day, date: dateStr, dots, extraCount, isToday: dateStr === todayStr, isFuture, tooltip })
+    const labels = typeList.map(t => careTypeLabel[t] || t)
+    if (hasUntyped) labels.push('種別未設定')
+    const tooltip = labels.length ? `${dateStr}: ${labels.join('・')}` : dateStr
+    result.push({ day, date: dateStr, dots, hasUntyped, extraCount, isToday: dateStr === todayStr, isFuture, tooltip })
   }
   return result
 })
@@ -159,7 +170,8 @@ const cells = computed(() => {
 .cell.is-selected { background: #cce8d4; box-shadow: inset 0 0 0 2px #2d6a3f; }
 .day-num { font-size: 12px; color: #666; }
 .day-dots { display: flex; gap: 2px; align-items: center; max-width: 100%; }
-.day-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.day-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; box-sizing: border-box; }
+.day-dot-hollow { background: transparent; border: 1.2px solid #2d3436; }
 .day-extra { font-size: 9px; color: #767676; line-height: 1; }
 
 @media (max-width: 600px) {
