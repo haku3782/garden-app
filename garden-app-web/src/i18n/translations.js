@@ -2,7 +2,7 @@ export const LANG_CODES = ['ja', 'en', 'zh', 'zh-TW', 'ko', 'th']
 
 const ja = {
   langName: '日本語', flag: '🇯🇵', short: 'JP',
-  appTitle: 'My植物管理',
+  appTitle: 'Garden Care Tracker',
   loginTitle: 'ログイン', registerTitle: '新規登録',
   usernamePlaceholder: 'ユーザー名', passwordPlaceholder: 'パスワード',
   loginBtn: 'ログイン', registerBtn: '登録',
@@ -37,7 +37,7 @@ const ja = {
 
 const en = {
   langName: 'English', flag: '🇺🇸', short: 'US',
-  appTitle: 'My Plant Manager',
+  appTitle: 'Garden Care Tracker',
   loginTitle: 'Login', registerTitle: 'Sign Up',
   usernamePlaceholder: 'Username', passwordPlaceholder: 'Password',
   loginBtn: 'Login', registerBtn: 'Sign Up',
@@ -72,7 +72,7 @@ const en = {
 
 const zh = {
   langName: '中文（简体）', flag: '🇨🇳', short: 'CN',
-  appTitle: '我的植物管理',
+  appTitle: 'Garden Care Tracker',
   loginTitle: '登录', registerTitle: '注册',
   usernamePlaceholder: '用户名', passwordPlaceholder: '密码',
   loginBtn: '登录', registerBtn: '注册',
@@ -107,7 +107,7 @@ const zh = {
 
 const zhTW = {
   langName: '中文（繁體）', flag: '🇹🇼', short: 'TW',
-  appTitle: '我的植物管理',
+  appTitle: 'Garden Care Tracker',
   loginTitle: '登入', registerTitle: '註冊',
   usernamePlaceholder: '使用者名稱', passwordPlaceholder: '密碼',
   loginBtn: '登入', registerBtn: '註冊',
@@ -142,7 +142,7 @@ const zhTW = {
 
 const ko = {
   langName: '한국어', flag: '🇰🇷', short: 'KR',
-  appTitle: '마이 식물관리',
+  appTitle: 'Garden Care Tracker',
   loginTitle: '로그인', registerTitle: '회원가입',
   usernamePlaceholder: '아이디', passwordPlaceholder: '비밀번호',
   loginBtn: '로그인', registerBtn: '회원가입',
@@ -177,7 +177,7 @@ const ko = {
 
 const th = {
   langName: 'ภาษาไทย', flag: '🇹🇭', short: 'TH',
-  appTitle: 'การจัดการต้นไม้ของฉัน',
+  appTitle: 'Garden Care Tracker',
   loginTitle: 'เข้าสู่ระบบ', registerTitle: 'สมัครสมาชิก',
   usernamePlaceholder: 'ชื่อผู้ใช้', passwordPlaceholder: 'รหัสผ่าน',
   loginBtn: 'เข้าสู่ระบบ', registerBtn: 'สมัครสมาชิก',
