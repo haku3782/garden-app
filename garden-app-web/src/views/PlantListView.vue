@@ -1,7 +1,10 @@
 <template>
   <div class="container">
     <header>
-      <h1>{{ t('appTitle') }}</h1>
+      <div class="title-row">
+        <img src="/favicon.png" alt="" class="app-logo" />
+        <h1>{{ t('appTitle') }}</h1>
+      </div>
       <div class="header-actions">
         <LanguageSelector />
         <button @click="router.push('/gallery')" class="ghost-btn icon-btn" :title="t('galleryTitle')">▭</button>
@@ -132,13 +135,15 @@ function confirmLogout() {
 
 header {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
   margin-bottom: 1.5rem;
 }
+.title-row { display: flex; align-items: center; gap: 0.5rem; }
+.app-logo { width: 1.5rem; height: 1.5rem; flex-shrink: 0; }
 header h1 { font-size: 1.3rem; margin: 0; }
-.header-actions { display: flex; gap: 0.5rem; flex-shrink: 0; }
+.header-actions { display: flex; gap: 0.5rem; flex-shrink: 0; width: 100%; justify-content: flex-end; }
 
 h2 { font-size: 1.05rem; margin: 0; }
 
@@ -209,7 +214,9 @@ button:active { transform: scale(0.97); }
 .add-plant-btn { padding: 0.45rem 0.8rem; font-size: 0.85rem; flex-shrink: 0; }
 
 @media (min-width: 600px) {
+  header { flex-direction: row; align-items: center; justify-content: space-between; }
   header h1 { font-size: 1.5rem; }
+  .header-actions { width: auto; }
 }
 
 @media (min-width: 768px) {
