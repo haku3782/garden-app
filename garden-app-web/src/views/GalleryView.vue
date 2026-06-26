@@ -6,7 +6,8 @@
     </div>
     <h1>{{ t('galleryViewTitle') }}</h1>
 
-    <p v-if="photos.length === 0">{{ t('noPhotosMessage') }}</p>
+    <p v-if="isLoading" class="loading-message">{{ t('loadingText') }}</p>
+    <p v-else-if="photos.length === 0">{{ t('noPhotosMessage') }}</p>
 
     <div class="gallery-grid">
       <div v-for="photo in photos" :key="photo.id" class="gallery-card" @click="goToPlant(photo)">
@@ -31,6 +32,7 @@ import { getPhotoGallery } from '@/api/gallery'
 const router = useRouter()
 const { t } = useLanguage()
 const photos = ref([])
+const isLoading = ref(true)
 
 const careTypeEmoji = { water: '💧', fertilize: '🌿', harvest: '🌾', other: '' }
 const careTypeKey = { water: 'careWater', fertilize: 'careFertilize', harvest: 'careHarvest', other: 'other' }
@@ -49,6 +51,7 @@ function goToPlant(photo) {
 onMounted(async () => {
   const res = await getPhotoGallery()
   photos.value = res.data
+  isLoading.value = false
 })
 </script>
 
@@ -73,6 +76,7 @@ onMounted(async () => {
   cursor: pointer;
 }
 .back-btn:hover { background: var(--color-bg-soft); color: #2d3436; }
+.loading-message { color: #767676; }
 .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; margin-top: 1.5rem; }
 .gallery-card { border: 1px solid #eee; border-radius: 8px; overflow: hidden; cursor: pointer; }
 .gallery-photo { width: 100%; height: 160px; object-fit: cover; display: block; }
