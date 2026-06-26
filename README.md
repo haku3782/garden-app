@@ -30,7 +30,7 @@ A backend-driven web application for tracking home garden plants and their care 
 | | |
 |---|---|
 | Language | Java 21 |
-| Framework | Spring Boot 3 |
+| Framework | Spring Boot 4 |
 | Security | Spring Security, JWT (jjwt), BCrypt |
 | Data Access | Spring Data JPA / Hibernate |
 | Migrations | Flyway |
@@ -77,10 +77,17 @@ graph TD
         Storage[(Storage<br/>Care-log Photos)]
     end
 
-    User -->|"HTTPS"| Vue
-    Vue -->|"REST API / JWT"| Spring
-    Spring -->|"JPA"| DB
-    Spring -->|"Authorization: Bearer secret<br/>(server-side only)"| Storage
+    User -->|"1. Access Site"| Vue
+    Vue -->|"2. REST API / JWT"| Spring
+    Spring -->|"3. JPA"| DB
+    Spring -.->|"4. Authorization: Bearer secret<br/>(server-side only)"| Storage
+
+    subgraph "CI/CD (on push to main)"
+        Dev((Developer)) -.->|"git push"| Repo[(GitHub)]
+        Repo -.->|"trigger"| Actions[GitHub Actions<br/>Automated Testing]
+        Repo -.->|"auto-deploy"| Vue
+        Repo -.->|"auto-deploy"| Spring
+    end
 ```
 
 ---

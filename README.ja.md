@@ -30,7 +30,7 @@
 | | |
 |---|---|
 | 言語 | Java 21 |
-| フレームワーク | Spring Boot 3 |
+| フレームワーク | Spring Boot 4 |
 | セキュリティ | Spring Security, JWT (jjwt), BCrypt |
 | データアクセス | Spring Data JPA / Hibernate |
 | マイグレーション | Flyway |
@@ -77,10 +77,17 @@ graph TD
         Storage[(Storage<br/>ケア記録の写真)]
     end
 
-    User -->|"HTTPS"| Vue
-    Vue -->|"REST API / JWT"| Spring
-    Spring -->|"JPA"| DB
-    Spring -->|"Authorization: Bearer secret<br/>（サーバー側のみ）"| Storage
+    User -->|"1. サイトにアクセス"| Vue
+    Vue -->|"2. REST API / JWT"| Spring
+    Spring -->|"3. JPA"| DB
+    Spring -.->|"4. Authorization: Bearer secret<br/>（サーバー側のみ）"| Storage
+
+    subgraph "CI/CD（mainへのPushで実行）"
+        Dev((開発者)) -.->|"git push"| Repo[(GitHub)]
+        Repo -.->|"トリガー"| Actions[GitHub Actions<br/>自動テスト]
+        Repo -.->|"自動デプロイ"| Vue
+        Repo -.->|"自動デプロイ"| Spring
+    end
 ```
 
 ---
