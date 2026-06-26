@@ -7,7 +7,7 @@
       <form @submit.prevent="handleLogin">
         <input v-model="username" type="text" :placeholder="t('usernamePlaceholder')" required />
         <input v-model="password" type="password" :placeholder="t('passwordPlaceholder')" required />
-        <button type="submit">{{ t('loginBtn') }}</button>
+        <button type="submit" :disabled="isLoggingIn">{{ isLoggingIn ? t('loggingInText') : t('loginBtn') }}</button>
       </form>
       <p class="auth-switch">{{ t('noAccountText') }}<router-link to="/register">{{ t('registerLink') }}</router-link></p>
       <p v-if="error" class="error">{{ error }}</p>
@@ -30,14 +30,18 @@ const { t } = useLanguage()
 const username = ref('')
 const password = ref('')
 const error = ref('')
+const isLoggingIn = ref(false)
 
 async function handleLogin() {
+  isLoggingIn.value = true
   try {
     const res = await login(username.value, password.value)
     authStore.login(res.data.token, username.value)
     router.push('/plants')
   } catch {
     error.value = t('loginError')
+  } finally {
+    isLoggingIn.value = false
   }
 }
 </script>
@@ -96,6 +100,7 @@ button {
   transition: background-color 0.15s;
 }
 button:hover { background: var(--color-primary-dark); }
+button:disabled { background: var(--color-border); color: var(--color-muted); cursor: not-allowed; }
 
 .auth-switch { margin: 0; text-align: center; color: var(--color-muted); font-size: 0.9rem; }
 .auth-switch a { color: var(--color-primary); text-decoration: none; font-weight: 500; }

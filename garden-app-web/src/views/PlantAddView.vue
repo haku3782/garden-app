@@ -19,7 +19,7 @@
       <input v-model="newPlant.name" type="text" :placeholder="t('namePlaceholder')" />
       <input v-model="newPlant.memo" type="text" :placeholder="t('commentPlaceholder')" />
       <div class="add-actions">
-        <button @click="handleCreate">{{ t('saveBtn') }}</button>
+        <button @click="handleCreate" :disabled="isSaving">{{ isSaving ? t('savingText') : t('saveBtn') }}</button>
         <button type="button" class="cancel-btn" @click="router.back()">{{ t('cancelBtn') }}</button>
       </div>
       <p v-if="error" class="error">{{ error }}</p>
@@ -42,6 +42,7 @@ const newPlant = ref({
   memo: ''
 })
 const error = ref('')
+const isSaving = ref(false)
 
 const typeOptions = [
   { value: 'vegetable', labelKey: 'typeVegetable' },
@@ -68,10 +69,15 @@ async function handleCreate() {
     return
   }
   error.value = ''
-  // 植えた日は登録時点の日時を自動で使う
-  const data = { ...newPlant.value, plantedAt: nowLocalDateTime() }
-  await createPlant(data)
-  router.back()
+  isSaving.value = true
+  try {
+    // 植えた日は登録時点の日時を自動で使う
+    const data = { ...newPlant.value, plantedAt: nowLocalDateTime() }
+    await createPlant(data)
+    router.back()
+  } finally {
+    isSaving.value = false
+  }
 }
 </script>
 
@@ -150,6 +156,7 @@ button {
 }
 button:hover { background: var(--color-primary-dark); }
 button:active { transform: scale(0.97); }
+button:disabled { background: var(--color-border); color: #767676; cursor: not-allowed; }
 
 .add-actions { display: flex; justify-content: flex-end; gap: 0.5rem; }
 .cancel-btn {

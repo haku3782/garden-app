@@ -26,7 +26,7 @@
         <div class="edit-actions">
           <button type="button" class="delete-btn" @click="handleDeletePlant">{{ t('deleteBtn') }}</button>
           <div class="edit-actions-right">
-            <button :disabled="!plantEditForm.name" @click="savePlantEdit">{{ t('saveBtn') }}</button>
+            <button :disabled="!plantEditForm.name || isSavingPlantEdit" @click="savePlantEdit">{{ isSavingPlantEdit ? t('savingText') : t('saveBtn') }}</button>
             <button type="button" class="cancel-btn" @click="cancelPlantEdit">{{ t('cancelBtn') }}</button>
           </div>
         </div>
@@ -64,12 +64,23 @@
             <div class="edit-photo-row">
               <div v-if="log.photoUrl" class="edit-photo-preview-wrap">
                 <img :src="log.photoUrl" :alt="t('careLogPhotoAlt')" class="edit-photo-preview" />
-                <button type="button" class="delete-photo-btn" :title="t('deletePhotoTitle')" @click="handleDeletePhoto(log)"></button>
+                <button
+                  type="button"
+                  class="delete-photo-btn"
+                  :class="{ 'is-loading': deletingPhotoLogId === log.id }"
+                  :disabled="deletingPhotoLogId === log.id"
+                  :title="t('deletePhotoTitle')"
+                  @click="handleDeletePhoto(log)"
+                ></button>
               </div>
               <template v-else>
-                <div class="edit-photo-preview edit-photo-placeholder"></div>
-                <button type="button" class="camera-btn" @click="openEditCamera(log.id)">◎ {{ t('takePhotoBtn') }}</button>
-                <button type="button" @click="openEditGallery(log.id)">▭ <span class="select-text-mobile">{{ t('selectPhotoBtn') }}</span><span class="select-text-desktop">{{ t('selectPhotoBtnFull') }}</span></button>
+                <div class="edit-photo-preview edit-photo-placeholder" :class="{ 'is-loading': uploadingPhotoLogId === log.id }"></div>
+                <button type="button" class="camera-btn" :disabled="uploadingPhotoLogId === log.id" @click="openEditCamera(log.id)">◎ {{ t('takePhotoBtn') }}</button>
+                <button type="button" :disabled="uploadingPhotoLogId === log.id" @click="openEditGallery(log.id)">
+                  ▭
+                  <span class="select-text-mobile">{{ uploadingPhotoLogId === log.id ? t('uploadingText') : t('selectPhotoBtn') }}</span>
+                  <span class="select-text-desktop">{{ uploadingPhotoLogId === log.id ? t('uploadingText') : t('selectPhotoBtnFull') }}</span>
+                </button>
               </template>
             </div>
             <div class="care-type-select">
@@ -86,9 +97,9 @@
             <input v-model="editForms[log.id].caredAt" type="datetime-local" />
             <input v-model="editForms[log.id].memo" type="text" :placeholder="t('commentPlaceholder')" />
             <div class="edit-actions">
-              <button type="button" class="delete-btn" @click="handleDeleteCareLog(log.id)">{{ t('deleteBtn') }}</button>
+              <button type="button" class="delete-btn" :disabled="deletingCareLogId === log.id" @click="handleDeleteCareLog(log.id)">{{ deletingCareLogId === log.id ? t('deletingText') : t('deleteBtn') }}</button>
               <div class="edit-actions-right">
-                <button @click="saveEdit(log)">{{ t('saveBtn') }}</button>
+                <button :disabled="savingCareLogId === log.id" @click="saveEdit(log)">{{ savingCareLogId === log.id ? t('savingText') : t('saveBtn') }}</button>
                 <button type="button" class="cancel-btn" @click="cancelEdit(log.id)">{{ t('cancelBtn') }}</button>
               </div>
             </div>
@@ -120,6 +131,8 @@
       :message="t('deletePlantConfirm')"
       :confirm-label="t('deleteBtn')"
       :cancel-label="t('cancelBtn')"
+      :loading="isDeletingPlant"
+      :loading-label="t('deletingText')"
       @confirm="confirmDeletePlant"
       @cancel="showDeletePlantConfirm = false"
     />
@@ -152,6 +165,12 @@ const activePhotoTargetId = ref(null)
 const editingPlant = ref(false)
 const plantEditForm = ref({ name: '', type: '', memo: '' })
 const showDeletePlantConfirm = ref(false)
+const isDeletingPlant = ref(false)
+const isSavingPlantEdit = ref(false)
+const savingCareLogId = ref(null)
+const deletingCareLogId = ref(null)
+const deletingPhotoLogId = ref(null)
+const uploadingPhotoLogId = ref(null)
 
 // caredAt（"2026-06-11T09:30:00"形式）から日付部分だけ取り出す
 const toDateStr = (caredAt) => caredAt ? caredAt.split('T')[0] : null
@@ -180,9 +199,14 @@ function handleDeletePlant() {
 }
 
 async function confirmDeletePlant() {
-  showDeletePlantConfirm.value = false
-  await deletePlant(route.params.id)
-  router.push('/plants')
+  isDeletingPlant.value = true
+  try {
+    await deletePlant(route.params.id)
+    router.push('/plants')
+  } finally {
+    isDeletingPlant.value = false
+    showDeletePlantConfirm.value = false
+  }
 }
 
 function startEditPlant() {
@@ -196,10 +220,15 @@ function cancelPlantEdit() {
 
 async function savePlantEdit() {
   if (!plantEditForm.value.name) return
-  const payload = { ...plantEditForm.value, plantedAt: plant.value.plantedAt }
-  await updatePlant(route.params.id, payload)
-  plant.value = { ...plant.value, ...plantEditForm.value }
-  editingPlant.value = false
+  isSavingPlantEdit.value = true
+  try {
+    const payload = { ...plantEditForm.value, plantedAt: plant.value.plantedAt }
+    await updatePlant(route.params.id, payload)
+    plant.value = { ...plant.value, ...plantEditForm.value }
+    editingPlant.value = false
+  } finally {
+    isSavingPlantEdit.value = false
+  }
 }
 
 const typeKeyMap = {
@@ -298,17 +327,22 @@ function toggleEditType(id, value) {
 }
 
 async function saveEdit(log) {
-  const form = editForms.value[log.id]
-  const payload = {
-    careType: form.careTypes.join(','),
-    caredAt: form.caredAt,
-    memo: form.memo
+  savingCareLogId.value = log.id
+  try {
+    const form = editForms.value[log.id]
+    const payload = {
+      careType: form.careTypes.join(','),
+      caredAt: form.caredAt,
+      memo: form.memo
+    }
+    await updateCareLog(route.params.id, log.id, payload)
+    const res = await getCareLogs(route.params.id)
+    careLogs.value = res.data
+    await refreshPlant()
+    cancelEdit(log.id)
+  } finally {
+    savingCareLogId.value = null
   }
-  await updateCareLog(route.params.id, log.id, payload)
-  const res = await getCareLogs(route.params.id)
-  careLogs.value = res.data
-  await refreshPlant()
-  cancelEdit(log.id)
 }
 
 function openEditCamera(id) {
@@ -324,25 +358,54 @@ function openEditGallery(id) {
 async function handleEditPhotoSelect(event) {
   const file = event.target.files[0]
   if (!file || !activePhotoTargetId.value) return
-  const compressed = await compressImage(file)
-  await uploadCareLogPhoto(route.params.id, activePhotoTargetId.value, compressed)
-  const res = await getCareLogs(route.params.id)
-  careLogs.value = res.data
-  await refreshPlant()
+  uploadingPhotoLogId.value = activePhotoTargetId.value
+  try {
+    await Promise.all([
+      (async () => {
+        const compressed = await compressImage(file)
+        await uploadCareLogPhoto(route.params.id, activePhotoTargetId.value, compressed)
+        const res = await getCareLogs(route.params.id)
+        careLogs.value = res.data
+        await refreshPlant()
+      })(),
+      wait(MIN_SPINNER_MS)
+    ])
+  } finally {
+    uploadingPhotoLogId.value = null
+  }
   event.target.value = ''
 }
 
+// API応答が速いとスピナーが一瞬で消えて見えないため、表示時間を最低限保証する
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+const MIN_SPINNER_MS = 500
+
 async function handleDeletePhoto(log) {
-  await deleteCareLogPhoto(route.params.id, log.id)
-  const res = await getCareLogs(route.params.id)
-  careLogs.value = res.data
-  await refreshPlant()
+  deletingPhotoLogId.value = log.id
+  try {
+    await Promise.all([
+      (async () => {
+        await deleteCareLogPhoto(route.params.id, log.id)
+        const res = await getCareLogs(route.params.id)
+        careLogs.value = res.data
+        await refreshPlant()
+      })(),
+      wait(MIN_SPINNER_MS)
+    ])
+  } finally {
+    deletingPhotoLogId.value = null
+  }
 }
 
 async function handleDeleteCareLog(id) {
-  await deleteCareLog(route.params.id, id)
-  careLogs.value = careLogs.value.filter(l => l.id !== id)
-  await refreshPlant()
+  deletingCareLogId.value = id
+  try {
+    await deleteCareLog(route.params.id, id)
+    careLogs.value = careLogs.value.filter(l => l.id !== id)
+    await refreshPlant()
+  } finally {
+    deletingCareLogId.value = null
+  }
 }
 </script>
 
@@ -507,7 +570,20 @@ button:disabled { background: var(--color-border); color: var(--color-muted); cu
 .edit-photo-row button:hover { background: var(--color-bg-soft); color: #2d3436; }
 .edit-photo-preview-wrap { position: relative; display: inline-block; }
 .edit-photo-preview { width: 56px; height: 56px; object-fit: cover; border-radius: var(--radius); flex-shrink: 0; display: block; }
-.edit-photo-placeholder { background: var(--color-bg-soft); }
+.edit-photo-placeholder { background: var(--color-bg-soft); position: relative; }
+.edit-photo-placeholder.is-loading::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  margin: -10px 0 0 -10px;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-muted);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
 .edit-photo-row .delete-photo-btn {
   position: absolute;
   top: -6px;
@@ -533,6 +609,16 @@ button:disabled { background: var(--color-border); color: var(--color-muted); cu
 .delete-photo-btn::before { transform: translate(-50%, -50%) rotate(45deg); }
 .delete-photo-btn::after { transform: translate(-50%, -50%) rotate(-45deg); }
 .edit-photo-row .delete-photo-btn:hover { background: var(--color-bg-soft); }
+.delete-photo-btn.is-loading {
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-muted);
+  animation: spin 0.7s linear infinite;
+}
+.delete-photo-btn.is-loading::before,
+.delete-photo-btn.is-loading::after { display: none; }
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
 .select-text-desktop { display: none; }
 
 @media (min-width: 768px) {

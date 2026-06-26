@@ -28,7 +28,7 @@
       <input v-model="newCareLog.caredAt" type="datetime-local" />
       <input v-model="newCareLog.memo" type="text" :placeholder="t('commentPlaceholder')" />
       <div class="add-care-actions">
-        <button @click="handleCreateCareLog">{{ t('saveBtn') }}</button>
+        <button @click="handleCreateCareLog" :disabled="isSaving">{{ isSaving ? t('savingText') : t('saveBtn') }}</button>
         <button type="button" class="cancel-btn" @click="router.back()">{{ t('cancelBtn') }}</button>
       </div>
     </div>
@@ -53,6 +53,7 @@ const selectedTypes = ref([])
 const cameraInput = ref(null)
 const galleryInput = ref(null)
 const selectedPhoto = ref(null)
+const isSaving = ref(false)
 
 const careTypeOptions = [
   { value: 'water', labelKey: 'careWater' },
@@ -111,12 +112,17 @@ function nowLocalDateTime() {
 }
 
 async function handleCreateCareLog() {
-  const payload = { ...newCareLog.value, careType: selectedTypes.value.join(',') }
-  const created = await createCareLog(route.params.id, payload)
-  if (selectedPhoto.value) {
-    await uploadCareLogPhoto(route.params.id, created.data.id, selectedPhoto.value)
+  isSaving.value = true
+  try {
+    const payload = { ...newCareLog.value, careType: selectedTypes.value.join(',') }
+    const created = await createCareLog(route.params.id, payload)
+    if (selectedPhoto.value) {
+      await uploadCareLogPhoto(route.params.id, created.data.id, selectedPhoto.value)
+    }
+    router.back()
+  } finally {
+    isSaving.value = false
   }
-  router.back()
 }
 </script>
 

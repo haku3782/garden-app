@@ -3,8 +3,8 @@
     <div class="modal-box">
       <p class="modal-message">{{ message }}</p>
       <div class="modal-actions">
-        <button type="button" class="modal-cancel" @click="$emit('cancel')">{{ cancelLabel }}</button>
-        <button type="button" class="modal-confirm" :class="{ danger: variant === 'danger' }" @click="$emit('confirm')">{{ confirmLabel }}</button>
+        <button type="button" class="modal-cancel" :disabled="loading" @click="$emit('cancel')">{{ cancelLabel }}</button>
+        <button type="button" class="modal-confirm" :class="{ danger: variant === 'danger' }" :disabled="loading" @click="$emit('confirm')">{{ loading ? loadingLabel : confirmLabel }}</button>
       </div>
     </div>
   </div>
@@ -15,7 +15,9 @@ defineProps({
   message: { type: String, required: true },
   confirmLabel: { type: String, required: true },
   cancelLabel: { type: String, required: true },
-  variant: { type: String, default: 'default' }
+  variant: { type: String, default: 'default' },
+  loading: { type: Boolean, default: false },
+  loadingLabel: { type: String, default: '' }
 })
 defineEmits(['confirm', 'cancel'])
 </script>
@@ -63,4 +65,5 @@ defineEmits(['confirm', 'cancel'])
 .modal-confirm:hover { background: #3d8350; }
 .modal-confirm.danger { background: #e74c3c; }
 .modal-confirm.danger:hover { background: #c0392b; }
+.modal-actions button:disabled { opacity: 0.6; cursor: not-allowed; }
 </style>
