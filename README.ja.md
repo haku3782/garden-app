@@ -1,16 +1,18 @@
-# 🌱 Garden Care Tracker
+# Garden Care Tracker
 
 *他の言語で読む: [English](README.md), [日本語](README.ja.md)*
 
 家庭菜園の植物とケア記録（水やり・肥料・収穫）を管理し、ヒートマップとストリークで可視化するWebアプリです。Spring Boot/Java製のREST APIをシステムの中核に置き、Vue 3製のSPAフロントエンドと組み合わせたバックエンド主導の構成になっています。
 
-🚀 **[ライブデモ](https://garden-app-web-dun.vercel.app)**
-🔗 **APIエンドポイント:** `https://garden-app-odmi.onrender.com`
-📘 **[Swagger UI](https://garden-app-odmi.onrender.com/swagger-ui/index.html)**
+**[ライブデモ](https://garden-app-web-dun.vercel.app)**
+**APIエンドポイント:** `https://garden-app-odmi.onrender.com`
+**[Swagger UI](https://garden-app-odmi.onrender.com/swagger-ui/index.html)**
+
+[![CI](https://github.com/haku3782/garden-app/actions/workflows/ci.yml/badge.svg)](https://github.com/haku3782/garden-app/actions/workflows/ci.yml)
 
 ---
 
-## 🎯 主な機能
+## 主な機能
 
 - **JWT認証:** BCryptによるパスワードハッシュ化と、サーバー側にセッション状態を持たないステートレスな認証。
 - **所有者ベースの認可:** 認証（誰であるか）だけでなく、植物・ケア記録の操作1件ごとにサービス層で「そのリソースが本当にリクエストしたユーザーの所有物か」を検証（`requireOwner`）。有効なトークンを持っているだけでは他人のデータを操作できない設計。
@@ -23,7 +25,7 @@
 
 ---
 
-## 🛠 技術スタック
+## 技術スタック
 
 ### バックエンド (`garden-app-api`)
 
@@ -58,7 +60,7 @@
 
 ---
 
-## 🏗 システムアーキテクチャ
+## システムアーキテクチャ
 
 ```mermaid
 graph TD
@@ -92,7 +94,7 @@ graph TD
 
 ---
 
-## 🧱 バックエンド設計のポイント
+## バックエンド設計のポイント
 
 `Controller → Service → Repository` のレイヤードアーキテクチャを採用。認可ロジックは `@PreAuthorize` アノテーションだけに頼らず、意図的に**サービス層**に明示的に実装しています。これにより「ケア記録は、認証中のユーザーが所有する植物に紐づいている必要がある」といった所有権ルールを、HTTP/Securityの関心事から分離した形で単体テスト可能にしています。
 
@@ -107,7 +109,7 @@ Security     → JwtFilter → SecurityContext → getCurrentUsername()
 
 ---
 
-## ✅ テスト
+## テスト
 
 | テストクラス | 行数 | 内容 |
 |---|---|---|
@@ -120,7 +122,7 @@ CIでは `mvn test` を実DBである管理型Postgres（Supabase）に対して
 
 ---
 
-## 📈 CI/CDとデプロイ
+## CI/CDとデプロイ
 
 | | ホスティング | デプロイトリガー |
 |---|---|---|
@@ -133,7 +135,7 @@ CIでは `mvn test` を実DBである管理型Postgres（Supabase）に対して
 
 ---
 
-## 💡 技術選定の理由
+## 技術選定の理由
 
 - **VueをReactではなく採用:** [ダーツ物理シミュレーター](https://github.com/haku3782)プロジェクトで既にReactを使用しているため、技術的制約ではなく「複数フレームワークを扱える」ことを示す意図でVueを選択。
 - **Spring Boot:** 単純なCRUDの実装に留まらず、レイヤードアーキテクチャ・認可ロジック・スキーママイグレーション・テストカバレッジといった、バックエンド設計力そのものを示すために採用。

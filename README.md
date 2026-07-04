@@ -1,16 +1,18 @@
-# 🌱 Garden Care Tracker
+# Garden Care Tracker
 
 *Read this in other languages: [English](README.md), [日本語](README.ja.md)*
 
 A backend-driven web application for tracking home garden plants and their care history (watering, fertilizing, harvesting), visualized through heatmaps and streak counters. Built with a Spring Boot/Java REST API as the core of the system, paired with a Vue 3 SPA frontend.
 
-🚀 **[Live Demo](https://garden-app-web-dun.vercel.app)**
-🔗 **API Endpoint:** `https://garden-app-odmi.onrender.com`
-📘 **[Swagger UI](https://garden-app-odmi.onrender.com/swagger-ui/index.html)**
+**[Live Demo](https://garden-app-web-dun.vercel.app)**
+**API Endpoint:** `https://garden-app-odmi.onrender.com`
+**[Swagger UI](https://garden-app-odmi.onrender.com/swagger-ui/index.html)**
+
+[![CI](https://github.com/haku3782/garden-app/actions/workflows/ci.yml/badge.svg)](https://github.com/haku3782/garden-app/actions/workflows/ci.yml)
 
 ---
 
-## 🎯 Key Features
+## Key Features
 
 - **JWT Authentication:** Stateless auth with BCrypt password hashing; no server-side session state.
 - **Ownership-Based Authorization:** Authentication alone isn't enough — every plant/care-log operation is checked at the service layer to ensure the resource actually belongs to the requesting user (`requireOwner`), not just that *some* valid token was presented.
@@ -23,7 +25,7 @@ A backend-driven web application for tracking home garden plants and their care 
 
 ---
 
-## 🛠 Tech Stack
+## Tech Stack
 
 ### Backend (`garden-app-api`)
 
@@ -58,7 +60,7 @@ A backend-driven web application for tracking home garden plants and their care 
 
 ---
 
-## 🏗 System Architecture
+## System Architecture
 
 ```mermaid
 graph TD
@@ -92,7 +94,7 @@ graph TD
 
 ---
 
-## 🧱 Backend Design Highlights
+## Backend Design Highlights
 
 A classic layered architecture (`Controller → Service → Repository`), with authorization deliberately placed in the **service layer** rather than left to `@PreAuthorize` annotations alone — this keeps ownership rules (e.g. "a care log must belong to a plant that belongs to the authenticated user") explicit and unit-testable in isolation from HTTP/Security concerns.
 
@@ -107,7 +109,7 @@ Each service method that touches a `Plant` or `CareLog` re-verifies ownership in
 
 ---
 
-## ✅ Testing
+## Testing
 
 | Test class | Lines | Focus |
 |---|---|---|
@@ -120,7 +122,7 @@ CI runs `mvn test` against a real managed Postgres instance (Supabase), so tests
 
 ---
 
-## 📈 CI/CD & Deployment
+## CI/CD & Deployment
 
 | | Hosting | Trigger |
 |---|---|---|
@@ -133,7 +135,7 @@ A unified GitHub Actions workflow (`.github/workflows/ci.yml`) runs frontend lin
 
 ---
 
-## 💡 Design Rationale
+## Design Rationale
 
 - **Vue.js over React:** React was already used in the [Darts Physics Simulator](https://github.com/haku3782) project — Vue was chosen here deliberately to demonstrate range across frontend frameworks, not because of a technical constraint.
 - **Spring Boot:** Chosen to demonstrate depth in backend design — layered architecture, authorization logic, schema migrations, and test coverage — rather than just CRUD wiring.
