@@ -38,8 +38,8 @@ async function handleLogin() {
     const res = await login(username.value, password.value)
     authStore.login(res.data.token, username.value)
     router.push('/plants')
-  } catch {
-    error.value = t('loginError')
+  } catch (err) {
+    error.value = err.response?.data?.message || t('loginError')
   } finally {
     isLoggingIn.value = false
   }

@@ -36,8 +36,8 @@ async function handleRegister() {
     const res = await register(username.value, password.value)
     authStore.login(res.data.token, username.value)
     router.push('/plants')
-  } catch {
-    error.value = t('registerError')
+  } catch (err) {
+    error.value = err.response?.data?.message || t('registerError')
   }
 }
 </script>
