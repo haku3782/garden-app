@@ -7,7 +7,7 @@
       <form @submit.prevent="handleRegister">
         <input v-model="username" type="text" :placeholder="t('usernamePlaceholder')" required />
         <input v-model="password" type="password" :placeholder="t('passwordPlaceholder')" required />
-        <button type="submit">{{ t('registerBtn') }}</button>
+        <button type="submit" :disabled="loading">{{ loading ? '登録中...' : t('registerBtn') }}</button>
       </form>
       <p class="auth-switch">{{ t('hasAccountText') }}<router-link to="/login">{{ t('loginLink') }}</router-link></p>
       <p v-if="error" class="error">{{ error }}</p>
@@ -31,6 +31,7 @@ const { t } = useLanguage()
 const username = ref('')
 const password = ref('')
 const error = ref('')
+const loading = ref(false)
 
 async function handleRegister() {
   error.value = ''
@@ -39,12 +40,15 @@ async function handleRegister() {
   const passwordError = validatePassword(password.value)
   if (passwordError) { error.value = passwordError; return }
 
+  loading.value = true
   try {
     const res = await register(username.value, password.value)
     authStore.login(res.data.token, username.value)
     router.push('/plants')
   } catch (err) {
     error.value = err.response?.data?.message || t('registerError')
+  } finally {
+    loading.value = false
   }
 }
 </script>
