@@ -59,17 +59,17 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { usePlantsStore } from '@/stores/plants'
 import { useLanguage } from '@/composables/useLanguage'
-import { getPlants } from '@/api/plants'
 import PlantPlaceholderIcon from '@/components/PlantPlaceholderIcon.vue'
 import LanguageSelector from '@/components/LanguageSelector.vue'
 import ConfirmModal from '@/components/ConfirmModal.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const plantsStore = usePlantsStore()
 const { t } = useLanguage()
 
-const plants = ref([])
 const isLoading = ref(true)
 const showLogoutConfirm = ref(false)
 
@@ -89,14 +89,12 @@ const typeFilterOptions = [
 ]
 
 const filteredPlants = computed(() => {
-  if (selectedType.value === 'all') return plants.value
-  return plants.value.filter(p => p.type === selectedType.value)
+  if (selectedType.value === 'all') return plantsStore.plants
+  return plantsStore.plants.filter(p => p.type === selectedType.value)
 })
 
 onMounted(async () => {
-  const res = await getPlants()
-  // 登録日時（createdAt）の新しい順に並べる
-  plants.value = [...res.data].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+  await plantsStore.fetchIfStale()
   isLoading.value = false
 })
 

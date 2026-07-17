@@ -143,6 +143,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getPlant, updatePlant, deletePlant } from '@/api/plants'
+import { usePlantsStore } from '@/stores/plants'
 import { getCareLogs, updateCareLog, deleteCareLog, uploadCareLogPhoto, deleteCareLogPhoto } from '@/api/careLogs'
 import CareCalendar from '@/components/CareCalendar.vue'
 import PlantPlaceholderIcon from '@/components/PlantPlaceholderIcon.vue'
@@ -152,6 +153,7 @@ import { useLanguage } from '@/composables/useLanguage'
 const route = useRoute()
 const router = useRouter()
 const { t } = useLanguage()
+const plantsStore = usePlantsStore()
 
 const plant = ref(null)
 const careLogs = ref([])
@@ -202,6 +204,7 @@ async function confirmDeletePlant() {
   isDeletingPlant.value = true
   try {
     await deletePlant(route.params.id)
+    plantsStore.invalidate()
     router.push('/plants')
   } finally {
     isDeletingPlant.value = false
@@ -225,6 +228,7 @@ async function savePlantEdit() {
     const payload = { ...plantEditForm.value, plantedAt: plant.value.plantedAt }
     await updatePlant(route.params.id, payload)
     plant.value = { ...plant.value, ...plantEditForm.value }
+    plantsStore.invalidate()
     editingPlant.value = false
   } finally {
     isSavingPlantEdit.value = false
@@ -369,6 +373,7 @@ async function handleEditPhotoSelect(event) {
         const res = await getCareLogs(route.params.id)
         careLogs.value = res.data
         await refreshPlant()
+        plantsStore.invalidate()
       })(),
       wait(MIN_SPINNER_MS)
     ])
@@ -391,6 +396,7 @@ async function handleDeletePhoto(log) {
         const res = await getCareLogs(route.params.id)
         careLogs.value = res.data
         await refreshPlant()
+        plantsStore.invalidate()
       })(),
       wait(MIN_SPINNER_MS)
     ])

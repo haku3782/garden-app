@@ -32,9 +32,11 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useLanguage } from '@/composables/useLanguage'
 import { createPlant } from '@/api/plants'
+import { usePlantsStore } from '@/stores/plants'
 
 const router = useRouter()
 const { t } = useLanguage()
+const plantsStore = usePlantsStore()
 
 const newPlant = ref({
   name: '',
@@ -74,6 +76,7 @@ async function handleCreate() {
     // 植えた日は登録時点の日時を自動で使う
     const data = { ...newPlant.value, plantedAt: nowLocalDateTime() }
     await createPlant(data)
+    plantsStore.invalidate()
     router.back()
   } finally {
     isSaving.value = false
