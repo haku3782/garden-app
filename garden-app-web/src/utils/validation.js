@@ -6,8 +6,8 @@ export function validateUsername(username) {
 }
 
 export function validatePassword(password) {
-  if (!password || password.length < 8 || password.length > 100) {
-    return 'パスワードは8〜100文字で入力してください'
+  if (!password || password.length < 8 || password.length > 72) {
+    return 'パスワードは8〜72文字で入力してください'
   }
   return null
 }

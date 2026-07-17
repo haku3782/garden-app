@@ -55,8 +55,8 @@ public class AuthService {
         if (username == null || username.length() < 3 || username.length() > 30) {
             throw new RuntimeException("ユーザー名は3〜30文字で入力してください");
         }
-        if (password == null || password.length() < 8 || password.length() > 100) {
-            throw new RuntimeException("パスワードは8〜100文字で入力してください");
+        if (password == null || password.length() < 8 || password.length() > 72) {
+            throw new RuntimeException("パスワードは8〜72文字で入力してください");
         }
         // 同名ユーザーの重複チェック
         if (userRepository.findByUsername(username).isPresent()) {

@@ -81,18 +81,18 @@ class AuthServiceTest {
 
         assertThatThrownBy(() -> authService.register(request))
                 .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("8〜100文字");
+                .hasMessageContaining("8〜72文字");
     }
 
     @Test
     void register_throwsWhenPasswordTooLong() {
         AuthRequest request = new AuthRequest();
         request.setUsername("taro");
-        request.setPassword("a".repeat(101));
+        request.setPassword("a".repeat(73));
 
         assertThatThrownBy(() -> authService.register(request))
                 .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("8〜100文字");
+                .hasMessageContaining("8〜72文字");
     }
 
     @Test

@@ -28,8 +28,8 @@ describe('validatePassword', () => {
     expect(validatePassword('1234567')).toBeTruthy()
   })
 
-  it('101文字は無効', () => {
-    expect(validatePassword('a'.repeat(101))).toBeTruthy()
+  it('73文字は無効', () => {
+    expect(validatePassword('a'.repeat(73))).toBeTruthy()
   })
 
   it('空文字は無効', () => {
@@ -40,7 +40,7 @@ describe('validatePassword', () => {
     expect(validatePassword('12345678')).toBeNull()
   })
 
-  it('100文字は有効（上限境界）', () => {
-    expect(validatePassword('a'.repeat(100))).toBeNull()
+  it('72文字は有効（上限境界）', () => {
+    expect(validatePassword('a'.repeat(72))).toBeNull()
   })
 })
