@@ -34,7 +34,7 @@
       <div v-else class="plant-grid">
         <div v-for="plant in filteredPlants" :key="plant.id" class="plant-card">
           <div class="plant-info" @click="goToDetail(plant.id)">
-            <img v-if="plant.latestPhotoUrl" :src="plant.latestPhotoUrl" alt="" class="plant-thumbnail" />
+            <img v-if="plant.latestPhotoUrl" :src="plant.latestPhotoUrl" alt="" class="plant-thumbnail" loading="lazy" />
             <div v-else class="plant-thumbnail plant-thumbnail-placeholder">
               <PlantPlaceholderIcon :size="64" />
             </div>

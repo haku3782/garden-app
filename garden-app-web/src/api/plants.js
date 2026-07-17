@@ -3,6 +3,9 @@ import api from './axios'
 export const getPlants = () =>
   api.get('/api/plants')
 
+export const getPlant = (id) =>
+  api.get(`/api/plants/${id}`)
+
 export const createPlant = (data) =>
   api.post('/api/plants', data)
 

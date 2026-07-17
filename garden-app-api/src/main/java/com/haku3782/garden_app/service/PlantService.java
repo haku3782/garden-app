@@ -102,6 +102,21 @@ public class PlantService {
     }
 
     /**
+     * 指定した ID の植物を1件取得する。
+     *
+     * @param id 取得対象の植物 ID
+     * @return 植物の PlantResponse
+     * @throws RuntimeException      指定 ID の植物が存在しない場合
+     * @throws AccessDeniedException ログイン中のユーザーが所有者でない場合
+     */
+    public PlantResponse getById(UUID id) {
+        Plant plant = plantRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("植物が見つかりません"));
+        requireOwner(plant);
+        return toResponse(plant);
+    }
+
+    /**
      * 新しい植物を登録する。
      *
      * <p>ログイン中のユーザーに紐づけて plants テーブルに INSERT する。

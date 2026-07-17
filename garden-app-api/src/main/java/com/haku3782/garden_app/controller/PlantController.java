@@ -52,6 +52,19 @@ public class PlantController {
     }
 
     /**
+     * 指定した ID の植物を1件取得する。
+     *
+     * <p>エンドポイント： GET /api/plants/{id}
+     *
+     * @param id 取得対象の植物 ID（パスパラメータ）
+     * @return HTTP 200 と植物の情報
+     */
+    @GetMapping("/{id}")
+    public ResponseEntity<PlantResponse> getOne(@PathVariable UUID id) {
+        return ResponseEntity.ok(plantService.getById(id));
+    }
+
+    /**
      * 新しい植物を登録する。
      *
      * <p>エンドポイント： POST /api/plants

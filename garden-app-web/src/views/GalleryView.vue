@@ -11,7 +11,7 @@
 
     <div class="gallery-grid">
       <div v-for="photo in photos" :key="photo.id" class="gallery-card" @click="goToPlant(photo)">
-        <img :src="photo.photoUrl" :alt="photo.plantName" class="gallery-photo" />
+        <img :src="photo.photoUrl" :alt="photo.plantName" class="gallery-photo" loading="lazy" />
         <div class="gallery-info">
           <span class="gallery-plant-name">{{ photo.plantName }}</span>
           <span class="gallery-care-type">{{ careTypeLabels(photo.careType) }}</span>

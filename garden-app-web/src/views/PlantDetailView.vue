@@ -32,7 +32,7 @@
         </div>
       </div>
       <div v-else class="plant-card-body" @click="startEditPlant">
-        <img v-if="plant.latestPhotoUrl" :src="plant.latestPhotoUrl" alt="" class="plant-detail-thumbnail" />
+        <img v-if="plant.latestPhotoUrl" :src="plant.latestPhotoUrl" alt="" class="plant-detail-thumbnail" loading="lazy" />
         <div v-else class="plant-detail-thumbnail plant-thumbnail-placeholder">
           <PlantPlaceholderIcon :size="80" />
         </div>
@@ -105,7 +105,7 @@
             </div>
           </div>
           <template v-else>
-            <img v-if="log.photoUrl" :src="log.photoUrl" :alt="t('careLogPhotoAlt')" class="care-photo" />
+            <img v-if="log.photoUrl" :src="log.photoUrl" :alt="t('careLogPhotoAlt')" class="care-photo" loading="lazy" />
             <div class="care-info">
               <div class="care-info-top">
                 <span class="care-date">{{ formatDateTime(log.caredAt) }}</span>
@@ -142,7 +142,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getPlants, updatePlant, deletePlant } from '@/api/plants'
+import { getPlant, updatePlant, deletePlant } from '@/api/plants'
 import { getCareLogs, updateCareLog, deleteCareLog, uploadCareLogPhoto, deleteCareLogPhoto } from '@/api/careLogs'
 import CareCalendar from '@/components/CareCalendar.vue'
 import PlantPlaceholderIcon from '@/components/PlantPlaceholderIcon.vue'
@@ -258,15 +258,17 @@ const careTypeOptions = [
 // plant.latestPhotoUrl はサーバー側で「写真付きの最新ケア記録」から算出されるため、
 // ケア記録側の写真を変更・削除した際は植物情報も再取得しないと古い写真が表示され続ける
 async function refreshPlant() {
-  const res = await getPlants()
-  plant.value = res.data.find(p => p.id === route.params.id)
+  const res = await getPlant(route.params.id)
+  plant.value = res.data
 }
 
 onMounted(async () => {
   const plantId = route.params.id
-  const plantsRes = await getPlants()
-  plant.value = plantsRes.data.find(p => p.id === plantId)
-  const logsRes = await getCareLogs(plantId)
+  const [plantRes, logsRes] = await Promise.all([
+    getPlant(plantId),
+    getCareLogs(plantId)
+  ])
+  plant.value = plantRes.data
   careLogs.value = logsRes.data
   // ギャラリーからの遷移時はその日付を選択、それ以外は最新日付を選択
   if (route.query.date) {

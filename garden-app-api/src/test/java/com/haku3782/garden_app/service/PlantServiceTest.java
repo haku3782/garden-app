@@ -119,6 +119,43 @@ class PlantServiceTest {
     }
 
     @Test
+    void getById_returnsPlantOfCurrentUser() {
+        UUID id = UUID.randomUUID();
+        Plant plant = plantOwnedBy("taro");
+        plant.setId(id);
+        plant.setName("トマト");
+        plant.setType(PlantType.vegetable);
+
+        when(plantRepository.findById(id)).thenReturn(Optional.of(plant));
+
+        PlantResponse response = plantService.getById(id);
+
+        assertThat(response.getName()).isEqualTo("トマト");
+    }
+
+    @Test
+    void getById_throwsWhenNotFound() {
+        UUID missingId = UUID.randomUUID();
+        when(plantRepository.findById(missingId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> plantService.getById(missingId))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("見つかりません");
+    }
+
+    @Test
+    void getById_throwsAccessDeniedWhenNotOwner() {
+        UUID id = UUID.randomUUID();
+        Plant ownedByOther = plantOwnedBy("hanako");
+        ownedByOther.setId(id);
+
+        when(plantRepository.findById(id)).thenReturn(Optional.of(ownedByOther));
+
+        assertThatThrownBy(() -> plantService.getById(id))
+                .isInstanceOf(AccessDeniedException.class);
+    }
+
+    @Test
     void create_savesPlantLinkedToCurrentUser() {
         User currentUser = new User();
         currentUser.setUsername("taro");
