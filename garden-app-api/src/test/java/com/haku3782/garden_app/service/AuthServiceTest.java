@@ -52,6 +52,65 @@ class AuthServiceTest {
     }
 
     @Test
+    void register_throwsWhenUsernameTooShort() {
+        AuthRequest request = new AuthRequest();
+        request.setUsername("ab");
+        request.setPassword("validpass");
+
+        assertThatThrownBy(() -> authService.register(request))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("3〜30文字");
+    }
+
+    @Test
+    void register_throwsWhenUsernameTooLong() {
+        AuthRequest request = new AuthRequest();
+        request.setUsername("a".repeat(31));
+        request.setPassword("validpass");
+
+        assertThatThrownBy(() -> authService.register(request))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("3〜30文字");
+    }
+
+    @Test
+    void register_throwsWhenPasswordTooShort() {
+        AuthRequest request = new AuthRequest();
+        request.setUsername("taro");
+        request.setPassword("short");
+
+        assertThatThrownBy(() -> authService.register(request))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("8〜100文字");
+    }
+
+    @Test
+    void register_throwsWhenPasswordTooLong() {
+        AuthRequest request = new AuthRequest();
+        request.setUsername("taro");
+        request.setPassword("a".repeat(101));
+
+        assertThatThrownBy(() -> authService.register(request))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("8〜100文字");
+    }
+
+    @Test
+    void register_succeedsWithBoundaryValidInput() {
+        AuthRequest request = new AuthRequest();
+        request.setUsername("abc");
+        request.setPassword("12345678");
+
+        when(userRepository.findByUsername("abc")).thenReturn(Optional.empty());
+        when(passwordEncoder.encode("12345678")).thenReturn("hashed");
+        when(jwtUtil.generateToken("abc")).thenReturn("token");
+
+        AuthResponse response = authService.register(request);
+
+        assertThat(response.getToken()).isEqualTo("token");
+    }
+
+    @Test
     void register_throwsWhenUsernameAlreadyExists() {
         AuthRequest request = new AuthRequest();
         request.setUsername("taro");

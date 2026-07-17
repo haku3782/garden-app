@@ -50,14 +50,22 @@ public class AuthService {
      * @throws RuntimeException ユーザー名がすでに使われている場合
      */
     public AuthResponse register(AuthRequest request) {
+        String username = request.getUsername();
+        String password = request.getPassword();
+        if (username == null || username.length() < 3 || username.length() > 30) {
+            throw new RuntimeException("ユーザー名は3〜30文字で入力してください");
+        }
+        if (password == null || password.length() < 8 || password.length() > 100) {
+            throw new RuntimeException("パスワードは8〜100文字で入力してください");
+        }
         // 同名ユーザーの重複チェック
-        if (userRepository.findByUsername(request.getUsername()).isPresent()) {
+        if (userRepository.findByUsername(username).isPresent()) {
             throw new RuntimeException("このユーザー名はすでに使われています");
         }
         // パスワードをハッシュ化して保存
         User user = new User();
-        user.setUsername(request.getUsername());
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setUsername(username);
+        user.setPassword(passwordEncoder.encode(password));
         userRepository.save(user);
         // JWT を生成して返す
         String token = jwtUtil.generateToken(user.getUsername());

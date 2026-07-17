@@ -22,6 +22,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useLanguage } from '@/composables/useLanguage'
 import LanguageSelector from '@/components/LanguageSelector.vue'
 import { register } from '@/api/auth'
+import { validateUsername, validatePassword } from '@/utils/validation'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -32,6 +33,12 @@ const password = ref('')
 const error = ref('')
 
 async function handleRegister() {
+  error.value = ''
+  const usernameError = validateUsername(username.value)
+  if (usernameError) { error.value = usernameError; return }
+  const passwordError = validatePassword(password.value)
+  if (passwordError) { error.value = passwordError; return }
+
   try {
     const res = await register(username.value, password.value)
     authStore.login(res.data.token, username.value)
