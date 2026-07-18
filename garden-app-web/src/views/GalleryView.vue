@@ -18,6 +18,7 @@
           <span v-if="photo.memo" class="gallery-memo">{{ photo.memo }}</span>
         </div>
       </div>
+      </div>
     </template>
   </div>
 </template>
