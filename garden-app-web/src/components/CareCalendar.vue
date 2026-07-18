@@ -191,4 +191,8 @@ const cells = computed(() => {
   .calendar-header h3 { min-width: 6em; font-size: 1rem; }
   .nav-btn, .today-btn, .planted-btn { padding: 0.3rem 0.6rem; font-size: 0.8rem; }
 }
+
+@media (min-width: 768px) {
+  .calendar-container { max-width: 420px; margin-left: auto; margin-right: auto; }
+}
 </style>
