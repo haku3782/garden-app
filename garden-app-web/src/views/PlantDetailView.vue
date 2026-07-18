@@ -7,52 +7,52 @@
 
     <p v-if="isLoading" class="loading-message">{{ t('loadingText') }}</p>
 
-    <div class="detail-top">
-      <div v-if="plant" class="plant-card">
-        <div v-if="editingPlant" class="plant-edit-form" @click.stop>
-          <p class="edit-note">{{ t('thumbnailNote') }}</p>
-          <input v-model="plantEditForm.name" type="text" :placeholder="t('plantNamePlaceholder')" />
-          <select v-model="plantEditForm.type">
-            <option value="vegetable">{{ t('typeVegetable') }}</option>
-            <option value="fruit">{{ t('typeFruit') }}</option>
-            <option value="herb">{{ t('typeHerb') }}</option>
-            <option value="flower">{{ t('typeFlower') }}</option>
-            <option value="tree">{{ t('typeTree') }}</option>
-            <option value="houseplant">{{ t('typeHouseplant') }}</option>
-            <option value="succulent">{{ t('typeSucculent') }}</option>
-            <option value="airplant">{{ t('typeAirPlant') }}</option>
-            <option value="other">{{ t('other') }}</option>
-          </select>
-          <input v-model="plantEditForm.memo" type="text" :placeholder="t('commentPlaceholder')" />
-          <div class="edit-actions">
-            <button type="button" class="delete-btn" @click="handleDeletePlant">{{ t('deleteBtn') }}</button>
-            <div class="edit-actions-right">
-              <button :disabled="!plantEditForm.name || isSavingPlantEdit" @click="savePlantEdit">{{ isSavingPlantEdit ? t('savingText') : t('saveBtn') }}</button>
-              <button type="button" class="cancel-btn" @click="cancelPlantEdit">{{ t('cancelBtn') }}</button>
-            </div>
-          </div>
-        </div>
-        <div v-else class="plant-card-body" @click="startEditPlant">
-          <img v-if="plant.latestPhotoUrl" :src="plant.latestPhotoUrl" alt="" class="plant-detail-thumbnail" loading="lazy" />
-          <div v-else class="plant-detail-thumbnail plant-thumbnail-placeholder">
-            <PlantPlaceholderIcon :size="80" />
-          </div>
-          <div class="plant-info-col">
-            <h1>{{ plant.name }}</h1>
-            <span class="plant-type-badge">{{ typeLabel(plant.type) }}</span>
-            <p v-if="plant.memo" class="plant-memo">{{ plant.memo }}</p>
+    <div v-if="plant" class="plant-card">
+      <div v-if="editingPlant" class="plant-edit-form" @click.stop>
+        <p class="edit-note">{{ t('thumbnailNote') }}</p>
+        <input v-model="plantEditForm.name" type="text" :placeholder="t('plantNamePlaceholder')" />
+        <select v-model="plantEditForm.type">
+          <option value="vegetable">{{ t('typeVegetable') }}</option>
+          <option value="fruit">{{ t('typeFruit') }}</option>
+          <option value="herb">{{ t('typeHerb') }}</option>
+          <option value="flower">{{ t('typeFlower') }}</option>
+          <option value="tree">{{ t('typeTree') }}</option>
+          <option value="houseplant">{{ t('typeHouseplant') }}</option>
+          <option value="succulent">{{ t('typeSucculent') }}</option>
+          <option value="airplant">{{ t('typeAirPlant') }}</option>
+          <option value="other">{{ t('other') }}</option>
+        </select>
+        <input v-model="plantEditForm.memo" type="text" :placeholder="t('commentPlaceholder')" />
+        <div class="edit-actions">
+          <button type="button" class="delete-btn" @click="handleDeletePlant">{{ t('deleteBtn') }}</button>
+          <div class="edit-actions-right">
+            <button :disabled="!plantEditForm.name || isSavingPlantEdit" @click="savePlantEdit">{{ isSavingPlantEdit ? t('savingText') : t('saveBtn') }}</button>
+            <button type="button" class="cancel-btn" @click="cancelPlantEdit">{{ t('cancelBtn') }}</button>
           </div>
         </div>
       </div>
-      <div v-if="!isLoading" class="detail-top-right">
-        <div class="care-heading-row">
-          <h2 class="care-heading">{{ t('recordsTitle') }}<span v-if="selectedDate" class="selected-date-label">（{{ selectedDate }}）</span></h2>
-          <button @click="router.push(`/plants/${route.params.id}/care/new`)" class="add-care-btn">{{ t('addRecordBtn') }}</button>
+      <div v-else class="plant-card-body" @click="startEditPlant">
+        <img v-if="plant.latestPhotoUrl" :src="plant.latestPhotoUrl" alt="" class="plant-detail-thumbnail" loading="lazy" />
+        <div v-else class="plant-detail-thumbnail plant-thumbnail-placeholder">
+          <PlantPlaceholderIcon :size="48" />
         </div>
-        <!-- カレンダー -->
-        <CareCalendar :care-logs="careLogs" :selected-date="selectedDate" @select-date="selectedDate = $event" />
+        <div class="plant-info-col">
+          <h1>{{ plant.name }}</h1>
+          <span class="plant-type-badge">{{ typeLabel(plant.type) }}</span>
+          <p v-if="plant.memo" class="plant-memo">{{ plant.memo }}</p>
+        </div>
       </div>
     </div>
+
+    <template v-if="!isLoading">
+      <div class="care-heading-row">
+        <h2 class="care-heading">{{ t('recordsTitle') }}<span v-if="selectedDate" class="selected-date-label">（{{ selectedDate }}）</span></h2>
+        <button @click="router.push(`/plants/${route.params.id}/care/new`)" class="add-care-btn">{{ t('addRecordBtn') }}</button>
+      </div>
+
+      <!-- カレンダー -->
+      <CareCalendar :care-logs="careLogs" :selected-date="selectedDate" @select-date="selectedDate = $event" />
+    </template>
 
     <div v-if="!isLoading" class="care-section">
         <!-- 編集時の写真選択用（v-forの外に置き、編集中のログにのみ使う） -->
@@ -635,8 +635,8 @@ button:disabled { background: var(--color-border); color: var(--color-muted); cu
   .select-text-mobile { display: none; }
   .select-text-desktop { display: inline; }
   .care-photo { max-width: 480px; }
-  .detail-top { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; align-items: start; }
-  .detail-top-right .care-heading-row { margin-top: 0; }
+  .plant-card { padding: 0.6rem 1rem; }
+  .plant-detail-thumbnail { width: 48px; height: 48px; }
 }
 
 @media (min-width: 1024px) {
