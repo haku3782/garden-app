@@ -5,7 +5,6 @@
       <button @click="router.push('/plants')" class="back-btn">{{ t('topBtn') }}</button>
     </div>
 
-    <p v-if="isLoading" class="loading-message">{{ t('loadingText') }}</p>
 
     <div v-if="plant" class="plant-card">
       <div v-if="editingPlant" class="plant-edit-form" @click.stop>

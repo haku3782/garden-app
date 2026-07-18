@@ -6,10 +6,9 @@
     </div>
     <h1>{{ t('galleryViewTitle') }}</h1>
 
-    <p v-if="isLoading" class="loading-message">{{ t('loadingText') }}</p>
-    <p v-else-if="photos.length === 0">{{ t('noPhotosMessage') }}</p>
-
-    <div class="gallery-grid">
+    <template v-if="!isLoading">
+      <p v-if="photos.length === 0">{{ t('noPhotosMessage') }}</p>
+      <div v-else class="gallery-grid">
       <div v-for="photo in photos" :key="photo.id" class="gallery-card" @click="goToPlant(photo)">
         <img :src="photo.photoUrl" :alt="photo.plantName" class="gallery-photo" loading="lazy" />
         <div class="gallery-info">
@@ -19,7 +18,7 @@
           <span v-if="photo.memo" class="gallery-memo">{{ photo.memo }}</span>
         </div>
       </div>
-    </div>
+    </template>
   </div>
 </template>
 
