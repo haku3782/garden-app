@@ -542,7 +542,7 @@ button:disabled { background: var(--color-border); color: var(--color-muted); cu
   transition: box-shadow 0.15s;
 }
 .care-card:hover { box-shadow: var(--shadow-md); }
-.care-photo { width: 100%; max-height: 320px; object-fit: cover; border-radius: var(--radius); }
+.care-photo { width: 100%; height: auto; border-radius: var(--radius); }
 .care-info { display: flex; flex-direction: column; gap: 0.3rem; min-width: 0; }
 .care-info-top { display: flex; flex-direction: column; gap: 0.3rem; }
 .care-type-row { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
